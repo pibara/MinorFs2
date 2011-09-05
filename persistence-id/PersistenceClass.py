@@ -86,19 +86,19 @@ class PersistenceClass:
         envhash = self._envhash(pid)
         cmdhash = self._cmdhash(pid)
         return self._secure_hash(mapshash + ":" + envhash + ":" + cmdhash)
-    def __call__(self,pid):
+    def __call__(self,pid,uid):
         if self.classno ==0 :
             return "" #Class 0 meand no persistence-id
         elif self.classno == 1 :
-            return self._class1(pid)
+            return str(uid) + ":1-" + self._class1(pid)
         elif self.classno == 2 :
-            return self._class2(pid)
+            return str(uid) + ":2-" + self._class2(pid)
         elif self.classno == 3 :
-            return self._class3(pid)
+            return str(uid) + ":3-" + self._class3(pid)
         elif self.classno == 4 :
-            return self._class4(pid)
+            return str(uid) + ":4-" + self._class4(pid)
         elif self.classno == 5 :
-            return self._class5(pid)
+            return str(uid) + ":5-" + self._class5(pid)
         else:
-            return self.toolset #Class 6 should have a toolset name defined for it that gets used as persistence-id.
+            return str(uid) + ":" + self.toolset #Class 6 should have a toolset name defined for it that gets used as persistence-id.
 
