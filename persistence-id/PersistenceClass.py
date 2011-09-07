@@ -7,6 +7,9 @@ class PersistenceClass:
         self.profilename = profilename
         self.toolset = "any"
         self.callchains = {}
+        self.useProfileInId = False
+        self.useEnvInId = False
+        self.useCmdLine = True
     def _callChainDefined(self,pid):
         #FIXME
         return False
@@ -25,9 +28,21 @@ class PersistenceClass:
     def _getSlotNumber(self,pid,basehash):
         #FIXME
         return 0
-    def _calculatePersistenceId(self,plaintext):
-        #FIXME
+    def _getEnvString(self):
         return "BOGUS"
+    def _getCmdCaptureText(self):
+        return "BOGUS"
+    def _calcDigestString(self,text):
+        return "BOGUS"
+    def _calculatePersistenceId(self,plaintext,pid):
+        text=plaintext
+        if self.useProfileInId:
+            text = text + "-PROFILE:" + self.profilename
+        if self.useEnvInId:
+            text = text + "-ENV:" + self._getEnvString()
+        if self.useCmdLine:
+            text = text + "-ENV:" + self._getCmdCaptureText()
+        return _calcDigestString(text)
     def parseLine(self,line):
         #FIXME
         return
