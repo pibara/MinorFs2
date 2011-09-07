@@ -48,24 +48,25 @@ class PersistenceClass:
         return
     def __call__(self,pid,uid):
         if self.classno == 1 :
-            return _calculatePersistenceId(str(uid))
+            return _calculatePersistenceId(str(uid),pid)
         elif self.classno == 2 :
-            return _calculatePersistenceId(str(uid) + self.toolset)
+            return _calculatePersistenceId(str(uid) + self.toolset,pid)
         elif self.classno == 3 :
-            return _calculatePersistenceId(str(uid) + _getExePath(pid))
+            return _calculatePersistenceId(str(uid) + _getExePath(pid),pid)
         elif self.classno == 4 :
             if self._callChainDefined(pid) :
-                return _calculatePersistenceId(str(uid) + _getCallChainExePaths(pid))
+                return _calculatePersistenceId(str(uid) + _getCallChainExePaths(pid),pid)
             else:
                 return None
         elif self.classno == 5 :
-            return _calculatePersistenceId(str(uid) + _getExePath(pid) + _getMapsString(pid))
+            return _calculatePersistenceId(str(uid) + _getExePath(pid) + _getMapsString(pid),pid)
         elif self.classno == 6:
-            return _calculatePersistenceId(str(uid) + _getCallChainExePaths(pid) + _getCallChainMapsString(pid))
+            return _calculatePersistenceId(str(uid) + _getCallChainExePaths(pid) + _getCallChainMapsString(pid),pid)
         elif self.classno == 7:
-            basehash = _calculatePersistenceId(str(uid) + _getCallChainExePaths(pid) + _getCallChainMapsString(pid))
+            basehash = _calculatePersistenceId(str(uid) + _getCallChainExePaths(pid) + _getCallChainMapsString(pid),pid)
             slot=self._getSlotNumber(pid,basehash)
             return _calculatePersistenceId(str(slot) + basehash)
         else:
             return None
+
 
