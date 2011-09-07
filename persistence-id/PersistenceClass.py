@@ -16,20 +16,42 @@ class PersistenceClass:
         self.callchains = set()
         self.envfilters = set()
     def _callChainDefined(self,pid):
-        #FIXME
+        if self._getCallChain(pid) in self.callchains:
+            return True
         return False
+    def _getPPid(self,pid):
+        #FIXME
+        return 1
     def _getExePath(self,pid):
         #FIXME
         return "BOGUS"
     def _getCallChainExePaths(self,pid):
-        #FIXME
-        return "BOGUS"
+        tpid=pid
+        s=""
+        while True:
+            if s:
+                s = s + self._getExePath(tpid)
+            else:
+                s = self._getExePath(tpid)
+            if tpid == 1:
+                break
+            tpid = _getPPid(tpid)
+        return s
     def _getMapsString(self,pid):
         #FIXME
         return "BOGUS"
     def _getCallChainMapsString(self,pid):
-        #FIXME
-        return "BOGUS"
+        tpid=pid
+        s=""
+        while True:
+            if s:
+                s = s + ":" + self._getMapsString(tpid)
+            else :
+                s= self._getMapsString(tpid)
+            if tpid == 1:
+                break
+            tpid = _getPPid(tpid)
+        return s
     def _getSlotNumber(self,pid,basehash):
         #FIXME
         return 0
