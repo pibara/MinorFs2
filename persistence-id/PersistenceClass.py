@@ -10,7 +10,11 @@ class PersistenceClass:
         self.callchains = {}
         self.useProfileInId = False
         self.useEnvInId = False
-        self.useCmdLine = True
+        self.useCmdLine = False
+        self.granularity = 0
+        self.regexes = []
+        self.callchains = set()
+        self.envfilters = set()
     def _callChainDefined(self,pid):
         #FIXME
         return False
@@ -34,19 +38,46 @@ class PersistenceClass:
     def _getCmdCaptureText(self):
         return "BOGUS"
     def _granularity_command(self,arguments):
-        #FIXME
+        for granchar in arguments:
+            if granchar == "n": 
+                self.granularity = 0
+            elif granchar == "u":
+                self.granularity = 1
+            elif granchar == "t":
+                self.granularity = 2
+            elif granchar == "b":
+                self.granularity = 3
+            elif granchar == "c":
+                self.granularity = 4
+            elif granchar == "x":
+                self.granularity = 5
+            elif granchar == "w":
+                self.granularity = 5
+            elif granchar == "p":
+                self.granularity = 7
+            elif granchar == "P":
+                self.useProfileInId = True
+            elif granchar == "E":
+                self.useEnvInId = True
+            elif granchar == "C":
+                self.useCmdLine = True    
         return
     def _toolset_command(self,arguments):
-        #FIXME
+        self.toolset = arguments
         return
     def _cmdregex_command(self,arguments):
-        #FIXME
+        try:
+            newregex = re.compile(arguments)
+            self.useEnvInId = True
+            self.regexes.append(newregex)
+        except:
+            pass
         return
     def _callchain_command(self,arguments):
-        #FIXME
+        self.callchains.add(arguments)
         return
     def _env_command(self,arguments):
-        #FIXME
+        self.envfilters.add(arguments)
         return
     def _calcDigestString(self,text):
         return hashlib.sha224(text).hexdigest()
