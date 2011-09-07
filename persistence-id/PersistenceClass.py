@@ -4,8 +4,7 @@ import hashlib
 
 
 class PersistenceClass:
-    def __init__(self,profilename,defaultregex):
-        self.defaultregex=defaultregex
+    def __init__(self,profilename):
         self.profilename = profilename
         self.toolset = "any"
         self.callchains = {}
@@ -34,6 +33,21 @@ class PersistenceClass:
         return "BOGUS"
     def _getCmdCaptureText(self):
         return "BOGUS"
+    def _granularity_command(self,arguments):
+        #FIXME
+        return
+    def _toolset_command(self,arguments):
+        #FIXME
+        return
+    def _cmdregex_command(self,arguments):
+        #FIXME
+        return
+    def _callchain_command(self,arguments):
+        #FIXME
+        return
+    def _env_command(self,arguments):
+        #FIXME
+        return
     def _calcDigestString(self,text):
         return hashlib.sha224(text).hexdigest()
     def _calculatePersistenceId(self,plaintext,pid):
@@ -46,7 +60,20 @@ class PersistenceClass:
             text = text + "-CMD:" + self._getCmdCaptureText()
         return _calcDigestString(text)
     def parseLine(self,line):
-        #FIXME
+        match = re.match(r"#minorfs\s+(\w+)\s+(\w.*),", line)
+        if (match) :
+            command = match.group(1)
+            arguments = match.group(1)
+            if command == "granularity":
+                self._granularity_command(arguments)
+            elif command == "toolset":
+                self._toolset_command(arguments)
+            elif command == "cmdregex":
+                self._env_command(arguments)
+            elif command == "callchain":
+                self._callchain_command(arguments)
+            elif command == "env":
+                self._env_command(arguments)
         return
     def __call__(self,pid,uid):
         if self.classno == 1 :
