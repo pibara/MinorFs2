@@ -1,5 +1,7 @@
 #!/usr/bin/python
 import re
+import hashlib
+
 
 class PersistenceClass:
     def __init__(self,profilename,defaultregex):
@@ -33,7 +35,7 @@ class PersistenceClass:
     def _getCmdCaptureText(self):
         return "BOGUS"
     def _calcDigestString(self,text):
-        return "BOGUS"
+        return hashlib.sha224(text).hexdigest()
     def _calculatePersistenceId(self,plaintext,pid):
         text=plaintext
         if self.useProfileInId:
@@ -41,7 +43,7 @@ class PersistenceClass:
         if self.useEnvInId:
             text = text + "-ENV:" + self._getEnvString()
         if self.useCmdLine:
-            text = text + "-ENV:" + self._getCmdCaptureText()
+            text = text + "-CMD:" + self._getCmdCaptureText()
         return _calcDigestString(text)
     def parseLine(self,line):
         #FIXME
