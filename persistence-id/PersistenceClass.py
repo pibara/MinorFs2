@@ -4,7 +4,7 @@ import hashlib
 import os
 
 class PersistenceClass:
-    def __init__(self,profilename):
+    def __init__(self,profilename,slotmachine):
         self.profilename = profilename
         self.toolset = "any"
         self.callchains = {}
@@ -15,6 +15,7 @@ class PersistenceClass:
         self.regexes = []
         self.callchains = set()
         self.envfilters = set()
+        self.slotmachine=slotmachine
     #Method for retreiving a proccess its parent process id from /proc/$PID/status
     def _getPPid(self,pid):
         try:
@@ -93,10 +94,9 @@ class PersistenceClass:
             if tpid == None:
                 return None
         return s
-    #FIXME:TODO 
+    #Function for determining the pp-pid slot number
     def _getSlotNumber(self,pid,basehash):
-        #FIXME
-        return 0
+        return self.slotmachine(pid,basehash)
     #Method for retreiving the relevant parts of the process environment variables from /proc/$PID/environ
     def _getEnvString(self,pid):
         if self.useEnvInId == False:
@@ -196,7 +196,6 @@ class PersistenceClass:
         return
     #The basic hashing stuff for creating the persistence-Id.
     def _calcDigestString(self,text):
-        print text
         return hashlib.sha224(text).hexdigest()
     #Helper method for __call__ that calculates the persistence Id based on the given granularity 'plaintext', and some non granularity dependant
     #configuration parameters.
@@ -286,7 +285,11 @@ class PersistenceClass:
             return None
 
 if __name__ == "__main__":
-   pclass = PersistenceClass("usr.bin.test")
+   class FakeSlotMachine:
+       def __call__(self,pid,basehash):
+           return 0
+   slotmachine = FakeSlotMachine()
+   pclass = PersistenceClass("usr.bin.test",slotmachine)
    pclass.parseLine("   #minorfs granularity       wPEC")
    pclass.parseLine("   #minorfs callchain         /sbin/init:/usr/sbin/gdm-binary:/usr/lib/gdm/gdm-simple-slave:/usr/lib/gdm/gdm-session-worker:/usr/bin/gnome-session:/usr/bin/zeitgeist-datahub")
    pclass.parseLine("   #minorfs env               PATH")
