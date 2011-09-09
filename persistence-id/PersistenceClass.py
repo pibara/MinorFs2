@@ -90,10 +90,53 @@ class PersistenceClass:
     def _getSlotNumber(self,pid,basehash):
         #FIXME
         return 0
-    def _getEnvString(self):
-        return "BOGUS"
-    def _getCmdCaptureText(self):
-        return "BOGUS"
+    def _getEnvString(self,pid):
+        if self.useEnvInId == False:
+            return "[NOENV]"
+        try:
+            envfile=open("/proc/" + str(pid) + "/environ")
+            envdata=envfile.read(10000000)
+            envfile.close()
+            envtokens = envdata.split("\000")
+            usealltokens = False
+            if len(self.envfilters) == 0:
+                usealltokens = True
+            relevantenvtokens = set()
+            for envtoken in envtokens:
+                if usealltokens:
+                    relevantenvtokens.add(envtoken)
+                else:
+                    keyval = envtoken.split("=")
+                    if keyval[0] in self.envfilters:
+                        relevantenvtokens.add(envtoken)
+            rval = repr(sorted(relevantenvtokens))
+            return rval
+        except:
+            return None 
+    def _getCmdCaptureText(self,pid):
+        if self.useCmdLine == False:
+            return "[NOCMDLINE]"
+        try:
+            cmdlinefile = open("/proc/" + str(pid) + "/cmdline")
+            cmdline = cmdlinefile.read(10000000)
+            if len(self.regexes) == 0:
+                return cmdline
+            relevantparts = ""
+            regexcount = 0
+            for regex in self.regexes:
+                match = regex.match(cmdline)
+                if match:
+                    if relevantparts :
+                        relevantparts = relevantparts + ":re[" + str(regexcount) + "]"
+                    else:
+                        relevantparts = "re[" + str(regexcount) + "]"
+                    for groupeddata in match.groups():
+                        relevantparts = relevantparts + ":" + groupeddata
+            if relevantparts:
+                return relevantparts
+            return "[NOREGEXMATCH]"
+        except:
+            return None 
     def _granularity_command(self,arguments):
         for granchar in arguments:
             if granchar == "n": #None 
@@ -143,9 +186,15 @@ class PersistenceClass:
         if self.useProfileInId:
             text = text + "-PROFILE:" + self.profilename
         if self.useEnvInId:
-            text = text + "-ENV:" + self._getEnvString()
+            envstring = self._getEnvString(pid)
+            if envstring == None:
+                return None
+            text = text + "-ENV:" + envstring
         if self.useCmdLine:
-            text = text + "-CMD:" + self._getCmdCaptureText()
+            cmdlinedata = self._getCmdCaptureText(pid)
+            if cmdlinedata == None:
+                return None
+            text = text + "-CMD:" + cmdlinedata
         return self._calcDigestString(text)
     def parseLine(self,line):
         match = re.match(r".*#minorfs\s+(\w+)\s+([^\s]+)", line)
@@ -157,7 +206,7 @@ class PersistenceClass:
             elif command == "toolset":
                 self._toolset_command(arguments)
             elif command == "cmdregex":
-                self._env_command(arguments)
+                self._cmdregex_command(arguments)
             elif command == "callchain":
                 self._callchain_command(arguments)
             elif command == "env":
@@ -205,16 +254,22 @@ class PersistenceClass:
             if callchainexepaths == None:
                 return None
             basehash = self._calculatePersistenceId(str(uid) + callchainexepaths + callchainmapsstring,pid)
+            if basehash == None:
+                return None
             slot=self._getSlotNumber(pid,basehash)
+            if slot == None:
+                return None
             return self._calculatePersistenceId(str(slot) + basehash)
         else: 
             return None
 
 if __name__ == "__main__":
    pclass = PersistenceClass("usr.bin.test")
-   pclass.parseLine("   #minorfs granularity       wPE")
+   pclass.parseLine("   #minorfs granularity       wPEC")
    pclass.parseLine("   #minorfs callchain         /sbin/init:/usr/sbin/gdm-binary:/usr/lib/gdm/gdm-simple-slave:/usr/lib/gdm/gdm-session-worker:/usr/bin/gnome-session:/usr/bin/zeitgeist-datahub")
    pclass.parseLine("   #minorfs env               PATH")
    pclass.parseLine("   #minorfs env                 LANG")
+   pclass.parseLine("   #minorfs cmdregex            .*-(.*)")
+   pclass.parseLine("   #minorfs cmdregex            .*(\w-\w).*")
    print pclass(2177,1000)
    print pclass(2177,1001)
