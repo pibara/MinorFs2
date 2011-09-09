@@ -15,6 +15,7 @@ class PersistenceClass:
         self.regexes = []
         self.callchains = set()
         self.envfilters = set()
+    #Method for retreiving a proccess its parent process id from /proc/$PID/status
     def _getPPid(self,pid):
         try:
             statusfile=open("/proc/" + str(pid) + "/status")
@@ -27,12 +28,14 @@ class PersistenceClass:
             return None
         except:
             return None
+    #Method for retreiving the executable path from the /proc/$PID/exe symlink
     def _getExePath(self,pid):
         try:
             rval=os.readlink("/proc/" + str(pid) + "/exe")
             return rval
         except:
             return None
+    #Method for retreiving the executable path from the /proc/$PID/exe symlink for the process and all its ancestors.
     def _getCallChainExePaths(self,pid):
         tpid=pid
         s=""
@@ -50,10 +53,12 @@ class PersistenceClass:
             if tpid == None:
                 return None
         return s
+    #Check if this process has a matching callchain entry configured for it.
     def _callChainDefined(self,pid):
         if self._getCallChainExePaths(pid) in self.callchains:
             return True
         return False
+    #Method for retreiving the relevant parts of the process environment variables from /proc/$PID/maps
     def _getMapsString(self,pid):
         mappedfiles = set()
         try:
@@ -70,6 +75,7 @@ class PersistenceClass:
             return None
         rval = repr(sorted(mappedfiles))
         return rval
+    #Method for retreiving the relevant parts of the process environment variables from /proc/$PID/maps for the process and all its ancestors.
     def _getCallChainMapsString(self,pid):
         tpid=pid
         s=""
@@ -87,9 +93,11 @@ class PersistenceClass:
             if tpid == None:
                 return None
         return s
+    #FIXME:TODO 
     def _getSlotNumber(self,pid,basehash):
         #FIXME
         return 0
+    #Method for retreiving the relevant parts of the process environment variables from /proc/$PID/environ
     def _getEnvString(self,pid):
         if self.useEnvInId == False:
             return "[NOENV]"
@@ -113,6 +121,7 @@ class PersistenceClass:
             return rval
         except:
             return None 
+    #Method for retreiving the relevant parts of the process commandline from /proc/$PID/cmdline
     def _getCmdCaptureText(self,pid):
         if self.useCmdLine == False:
             return "[NOCMDLINE]"
@@ -132,11 +141,13 @@ class PersistenceClass:
                         relevantparts = "re[" + str(regexcount) + "]"
                     for groupeddata in match.groups():
                         relevantparts = relevantparts + ":" + groupeddata
+                regexcount = regexcount+1
             if relevantparts:
                 return relevantparts
             return "[NOREGEXMATCH]"
         except:
             return None 
+    #Function meant to process an 'granularity' configuration line.
     def _granularity_command(self,arguments):
         for granchar in arguments:
             if granchar == "n": #None 
@@ -162,9 +173,11 @@ class PersistenceClass:
             elif granchar == "C": #Commandline argument sensitive
                 self.useCmdLine = True    
         return
+    #Function meant to process an 'toolset' configuration line.
     def _toolset_command(self,arguments):
         self.toolset = arguments
         return
+    #Function meant to process an 'cmdregex' configuration line.
     def _cmdregex_command(self,arguments):
         try:
             newregex = re.compile(arguments)
@@ -173,14 +186,20 @@ class PersistenceClass:
         except:
             pass
         return
+    #Function meant to process an 'callchain' configuration line.
     def _callchain_command(self,arguments):
         self.callchains.add(arguments)
         return
+    #Function meant to process an 'env' configuration line.
     def _env_command(self,arguments):
         self.envfilters.add(arguments)
         return
+    #The basic hashing stuff for creating the persistence-Id.
     def _calcDigestString(self,text):
+        print text
         return hashlib.sha224(text).hexdigest()
+    #Helper method for __call__ that calculates the persistence Id based on the given granularity 'plaintext', and some non granularity dependant
+    #configuration parameters.
     def _calculatePersistenceId(self,plaintext,pid):
         text=plaintext
         if self.useProfileInId:
@@ -196,6 +215,7 @@ class PersistenceClass:
                 return None
             text = text + "-CMD:" + cmdlinedata
         return self._calcDigestString(text)
+    #The parseLine function is used to process the AppArmor config piggyback config lines for the AppArmor profile this object coresponds with.
     def parseLine(self,line):
         match = re.match(r".*#minorfs\s+(\w+)\s+([^\s]+)", line)
         if (match) :
@@ -212,22 +232,24 @@ class PersistenceClass:
             elif command == "env":
                 self._env_command(arguments)
         return
+    #Invocation will when given process id and user id return the persistence-ID (or None) in a way determined by previous invocations of parseLine.
+    #Basicaly this call is one big switch case for the levels of granularity this object may be configured for.
     def __call__(self,pid,uid):
         if self.granularity == 1 : #User granularity.
-            return self._calculatePersistenceId(str(uid),pid)
+            return self._calculatePersistenceId("user-granularity:uid=" + str(uid),pid)
         elif self.granularity == 2 : #Toolset granularity.
-            return self._calculatePersistenceId(str(uid) + self.toolset,pid)
+            return self._calculatePersistenceId("toolset-granularity:uid=" + str(uid) + ":toolset=" + self.toolset,pid)
         elif self.granularity == 3 : #Binary granularity.
             exepath = self._getExePath(pid)
             if exepath == None:
                 return None
-            return self._calculatePersistenceId(str(uid) + exepath,pid)
+            return self._calculatePersistenceId("binary-granularity:uid=" + str(uid) + ":exepath=" + exepath,pid)
         elif self.granularity == 4 : #Callchain granularity.
             if self._callChainDefined(pid) :
                 cpexepath = self._getCallChainExePaths(pid)
                 if cpexepath == None:
                     return None
-                return self._calculatePersistenceId(str(uid) + cpexepath,pid)
+                return self._calculatePersistenceId("callchain-granularity:uid=" + str(uid) + ":ccexepath="  + cpexepath,pid)
             else:
                 return None
         elif self.granularity == 5 : #XMap granularity.
@@ -237,7 +259,7 @@ class PersistenceClass:
             mstring = self._getMapsString(pid)
             if mstring == None:
                 return None
-            return self._calculatePersistenceId(str(uid) + exepath + mstring,pid)
+            return self._calculatePersistenceId("xmap-granularity:uid=" + str(uid) + ":exepath=" +exepath + ":mapsstring=" + mstring,pid)
         elif self.granularity == 6: #Worker granularity.
             callchainmapsstring = self._getCallChainMapsString(pid)
             if callchainmapsstring == None:
@@ -245,7 +267,7 @@ class PersistenceClass:
             callchainexepaths = self._getCallChainExePaths(pid)
             if callchainexepaths == None:
                 return None
-            return self._calculatePersistenceId(str(uid) + callchainexepaths + callchainmapsstring,pid)
+            return self._calculatePersistenceId("worker-granularity:uid=" + str(uid) + ":ccexepath=" + callchainexepaths + ":ccmapsstring=" + callchainmapsstring,pid)
         elif self.granularity == 7: #Pseudo persistent process granularity.
             callchainmapsstring = self._getCallChainMapsString(pid)
             if callchainmapsstring == None:
@@ -253,13 +275,13 @@ class PersistenceClass:
             callchainexepaths = self._getCallChainExePaths(pid)
             if callchainexepaths == None:
                 return None
-            basehash = self._calculatePersistenceId(str(uid) + callchainexepaths + callchainmapsstring,pid)
+            basehash = self._calculatePersistenceId("worker-granularity:uid=" + str(uid) + ":ccexepath=" + callchainexepaths + ":ccmapsstring=" + callchainmapsstring,pid)
             if basehash == None:
                 return None
             slot=self._getSlotNumber(pid,basehash)
             if slot == None:
                 return None
-            return self._calculatePersistenceId(str(slot) + basehash)
+            return self._calculatePersistenceId("pseudo-persistent-process-granularity:slot=" +str(slot) + ":basehash="+ basehash)
         else: 
             return None
 
