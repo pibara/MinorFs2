@@ -16,6 +16,7 @@ class PersistenceClass:
         self.callchains = set()
         self.envfilters = set()
         self.slotmachine=slotmachine
+        self.cache = {}
     #Method for retreiving a proccess its parent process id from /proc/$PID/status
     def _getPPid(self,pid):
         try:
@@ -214,6 +215,9 @@ class PersistenceClass:
                 return None
             text = text + "-CMD:" + cmdlinedata
         return self._calcDigestString(text)
+    #
+    def invalidate(self,pid):
+        del self.cache[pid]
     #The parseLine function is used to process the AppArmor config piggyback config lines for the AppArmor profile this object coresponds with.
     def parseLine(self,line):
         match = re.match(r".*#minorfs\s+(\w+)\s+([^\s]+)", line)
@@ -234,61 +238,51 @@ class PersistenceClass:
     #Invocation will when given process id and user id return the persistence-ID (or None) in a way determined by previous invocations of parseLine.
     #Basicaly this call is one big switch case for the levels of granularity this object may be configured for.
     def __call__(self,pid,uid):
+        if self.cache.has_key(pid):
+            return self.cache[pid]
+        rval = None
         if self.granularity == 1 : #User granularity.
-            return self._calculatePersistenceId("user-granularity:uid=" + str(uid),pid)
+            rval = self._calculatePersistenceId("user-granularity:uid=" + str(uid),pid)
         elif self.granularity == 2 : #Toolset granularity.
-            return self._calculatePersistenceId("toolset-granularity:uid=" + str(uid) + ":toolset=" + self.toolset,pid)
+            rval = self._calculatePersistenceId("toolset-granularity:uid=" + str(uid) + ":toolset=" + self.toolset,pid)
         elif self.granularity == 3 : #Binary granularity.
             exepath = self._getExePath(pid)
-            if exepath == None:
-                return None
-            return self._calculatePersistenceId("binary-granularity:uid=" + str(uid) + ":exepath=" + exepath,pid)
+            if exepath != None:
+                rval = self._calculatePersistenceId("binary-granularity:uid=" + str(uid) + ":exepath=" + exepath,pid)
         elif self.granularity == 4 : #Callchain granularity.
             if self._callChainDefined(pid) :
                 cpexepath = self._getCallChainExePaths(pid)
-                if cpexepath == None:
-                    return None
-                return self._calculatePersistenceId("callchain-granularity:uid=" + str(uid) + ":ccexepath="  + cpexepath,pid)
-            else:
-                return None
+                if cpexepath != None:
+                    rval = self._calculatePersistenceId("callchain-granularity:uid=" + str(uid) + ":ccexepath="  + cpexepath,pid)
         elif self.granularity == 5 : #XMap granularity.
             exepath = self._getExePath(pid)
-            if exepath == None:
-                return None 
-            mstring = self._getMapsString(pid)
-            if mstring == None:
-                return None
-            return self._calculatePersistenceId("xmap-granularity:uid=" + str(uid) + ":exepath=" +exepath + ":mapsstring=" + mstring,pid)
+            if exepath != None: 
+                mstring = self._getMapsString(pid)
+                if mstring != None:
+                    rval = self._calculatePersistenceId("xmap-granularity:uid=" + str(uid) + ":exepath=" +exepath + ":mapsstring=" + mstring,pid)
         elif self.granularity == 6: #Worker granularity.
             callchainmapsstring = self._getCallChainMapsString(pid)
-            if callchainmapsstring == None:
-                return None
-            callchainexepaths = self._getCallChainExePaths(pid)
-            if callchainexepaths == None:
-                return None
-            return self._calculatePersistenceId("worker-granularity:uid=" + str(uid) + ":ccexepath=" + callchainexepaths + ":ccmapsstring=" + callchainmapsstring,pid)
+            if callchainmapsstring != None:
+                callchainexepaths = self._getCallChainExePaths(pid)
+                if callchainexepaths != None:
+                    rval = self._calculatePersistenceId("worker-granularity:uid=" + str(uid) + ":ccexepath=" + callchainexepaths + ":ccmapsstring=" + callchainmapsstring,pid)
         elif self.granularity == 7: #Pseudo persistent process granularity.
             callchainmapsstring = self._getCallChainMapsString(pid)
-            if callchainmapsstring == None:
-                return None
-            callchainexepaths = self._getCallChainExePaths(pid)
-            if callchainexepaths == None:
-                return None
-            basehash = self._calculatePersistenceId("worker-granularity:uid=" + str(uid) + ":ccexepath=" + callchainexepaths + ":ccmapsstring=" + callchainmapsstring,pid)
-            if basehash == None:
-                return None
-            slot=self._getSlotNumber(pid,basehash)
-            if slot == None:
-                return None
-            return self._calculatePersistenceId("pseudo-persistent-process-granularity:slot=" +str(slot) + ":basehash="+ basehash)
-        else: 
-            return None
-
+            if callchainmapsstring != None:
+                callchainexepaths = self._getCallChainExePaths(pid)
+                if callchainexepaths != None:
+                    basehash = self._calculatePersistenceId("worker-granularity:uid=" + str(uid) + ":ccexepath=" + callchainexepaths + ":ccmapsstring=" + callchainmapsstring,pid)
+                    if basehash != None:
+                        slot=self._getSlotNumber(pid,basehash)
+                        if slot != None:
+                            rval = self._calculatePersistenceId("pseudo-persistent-process-granularity:slot=" +str(slot) + ":basehash="+ basehash)
+        if rval != None:
+            self.cache[pid] = rval
+            self.slotmachine.requestPidNotification(pid,self)
+        return rval
 if __name__ == "__main__":
-   class FakeSlotMachine:
-       def __call__(self,pid,basehash):
-           return 0
-   slotmachine = FakeSlotMachine()
+   import SlotMachine
+   slotmachine = SlotMachine.SlotMachine()
    pclass = PersistenceClass("usr.bin.test",slotmachine)
    pclass.parseLine("   #minorfs granularity       wPEC")
    pclass.parseLine("   #minorfs callchain         /sbin/init:/usr/sbin/gdm-binary:/usr/lib/gdm/gdm-simple-slave:/usr/lib/gdm/gdm-session-worker:/usr/bin/gnome-session:/usr/bin/zeitgeist-datahub")
@@ -297,4 +291,4 @@ if __name__ == "__main__":
    pclass.parseLine("   #minorfs cmdregex            .*-(.*)")
    pclass.parseLine("   #minorfs cmdregex            .*(\w-\w).*")
    print pclass(2177,1000)
-   print pclass(2177,1001)
+   print pclass(2179,1001)

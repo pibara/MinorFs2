@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#/usr/bin/python
 import os
 class SlotMachine:
     #Constructor
@@ -6,6 +6,7 @@ class SlotMachine:
         self.pidtohash = {}
         self.hashslots = {}
         self.activeprocesses = set()
+        self.notifymap = {}
     #A new process we hadn't seen before needs to be registered.
     def _registerProcess(self,pid,slothash):
         self.pidtohash[str(pid)]=slothash
@@ -15,7 +16,7 @@ class SlotMachine:
             bestfit = len(self.hashslots[slothash])
             slot=0
             for candidate in self.hashslots[slothash]:
-                if candidate == str(pid):
+                if candidate == None:
                     if slot < bestfit:
                         bestfit=slot
                 slot=slot+1
@@ -39,6 +40,11 @@ class SlotMachine:
         if actslots == 0:
             del self.hashslots[slothash]
         self.activeprocesses.remove(str(pid))
+        if self.notifymap.has_key(pid):
+            self.notifymap[pid].invalidate(pid)
+            del self.notifymap[pid]
+    def requestPidNotification(self,pid,pclass):
+        self.notifymap[pid] = pclass
     #When tick gets called, SlotMachine will check all running processes and unregister those needed.
     def tick(self):
         procdirs = os.listdir("/proc")
