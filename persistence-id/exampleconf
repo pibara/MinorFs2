@@ -1,0 +1,8 @@
+#Example config for chromium browser. The idea is that it gives a 
+#persistence-id only to the parrent process. The parent process
+#can than delegate sub trees to its children.
+/usr/lib/chromium-browser/chromium-browser {
+    #minorfs granularity       wP,
+    #minorfs callchain         /sbin/init:/usr/lib/chromium-browser/chromium-browser   
+}
+
