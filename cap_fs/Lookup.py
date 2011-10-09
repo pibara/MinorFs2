@@ -89,7 +89,10 @@ if __name__ == "__main__":
         def setReadOnly(self,roflag):
             self.roflag=roflag
         def printit(self):
-            print "> " , self.basepath, self.exists(), self.roflag, base64.b32encode(self.key)
+            print "    $BASEDIR" + self.basepath
+            print "    exists =", self.exists()
+            print "    readOnly=",self.roflag
+            print "    cryptoKey=", base64.b32encode(self.key)
     class FakeStorage:
         def pathToNode(self,path):
             rval=FakeNode(path)
@@ -99,5 +102,5 @@ if __name__ == "__main__":
     for fakekey in  ["KRRKFRQCU3V4VSVWOZ2WWVWH4756NN6CP7OORQLCYPI4XR7365EA","HRZWQYJSGU3CASCBKNECA33CNJSWG5BAIAQDA6BSG43GGYZTGA7A"]:
         for fakepath in ["","foo","foo/foo","foo/foo/foo","foo/foo/foo/bar.txt"]:
             node=lookup(fakekey,fakepath);
-            print fakekey , fakepath
+            print "$MOUNTPOINT/" + fakekey + "/"  + fakepath + ":"
             node.printit()
