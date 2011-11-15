@@ -1,0 +1,54 @@
+#!/usr/bin/python
+import hashlib
+import base64
+class Lookup:
+    def __init__(self,rawstorage,salt):
+        self.rawstorage = rawstorage
+        self.salt=salt
+    def __call__(self,accesstoken,relpath):
+        #A valid basecap is 55 characters long.
+        if len(accesstoken) != 55:
+            return None
+        #The access token starts with either 'rw-' or 'ro-'
+        mode=accesstoken[:2]
+        #The rest is the base32 representation of a 256 bit key.
+        basecap=accesstoken[3:]
+        if (mode=='rw'):
+            #If its a read only token, remember that and calculate the ro-cap/crypto-key
+            readonly = False
+            rwcap=basecap
+            cryptokey = str(hashlib.sha256(basecap + self.salt ).digest())
+            rocap = base64.b32encode(rawhash)[:52]
+        elif (mode=='ro'):
+            #If its a read/write access token, remember that.
+            readonly = True
+            rwcap=None
+            cryptokey=cryptokey = base64.b32decode(basecap + "====")
+            rocap=basecap
+        else:
+            #Anything else is bogus.
+            return None
+        parentrocap=None
+        #We don't look at the file-system untill we have to.
+        for subnodename in relpath.split("/"):
+            #Remember the last parent, we may need it later on.
+            parentrocap=rocap
+            #Calculate all relevant caps from the parent ro cap and the subnode name.
+            rwcap=base64.b32encode(str(hashlib.sha256( parentrocap + self.salt + subnodename ).digest()))[:52]
+            cryptokey=str(hashlib.sha256( rwcap + self.salt ).digest())
+            rocap=base64.b32encode(rawsubkey2)[:52]
+        #First look at the end node only, calculate the storage key, storage path and check it it exists.
+        storagekey = base64.b32encode(str(hashlib.sha256(rocap + self.salt ).digest()))[:52]  
+        storagepath = "/" + storagekey[:2] + "/" + storagekey[2:4] + "/" + storagekey[4:]      
+        basenode = self.rawstorage.pathToNode(storagepath)
+        if parentrocap and not basenode.exists():
+            #If we do have a parent node and our current does not exist, our parent node MUST exist.
+            parentstoragekey = base64.b32encode(str(hashlib.sha256(parentrocap + self.salt ).digest()))[:52]
+            parentstoragepath = "/" + parentstoragekey[:2] + "/" + parentstoragekey[2:4] + "/" + parentstoragekey[4:]
+            parentbasenode = self.rawstorage.pathToNode(parentstoragepath)
+            if not parentbasenode.exists():
+                #If it doesn't, the whole path must be bogus.
+                return None
+        #Now set the crypto key and the read only flag for the node before we return it.
+        basenode.setMeta(readonly,rwcap,rocap,cryptokey)
+        return basenode
