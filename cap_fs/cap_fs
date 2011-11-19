@@ -88,8 +88,12 @@ class Node:
             self.nodetype = (os.stat(fullpath).st_mode & 070) >> 3
     def exists(self):
         return self.exists
+    def isFile(self):
+        return self.nodetype==4
     def isDir(self):
-        return self.isdir
+        return self.nodetype==6
+    def isLink(self):
+        return self.nodetype==7
     def setMeta(self,rwcap,rocap,cryptokey):
         if not self.initialized:
             self.initialized = True
@@ -97,6 +101,10 @@ class Node:
             self.rocap=rocap
             self.cryptokey=cryptokey
         return
+    def createAsDir(self):
+        pass
+    def createAsLink(self,old):
+        pass
 
 class RootDir:
     def __init__(self,rootdir):
