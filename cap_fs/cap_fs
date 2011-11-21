@@ -3,6 +3,8 @@ import hashlib
 import base64
 import os
 import stat
+import json
+import sys
 class Lookup:
     def __init__(self,rawstorage,salt):
         self.rawstorage = rawstorage
@@ -16,7 +18,10 @@ class Lookup:
         #The rest is the base32 representation of a 256 bit key.
         basecapb32=accesstoken[3:]
         #Turn it into a raw 256 bit key.
-        basecapraw=base64.b32decode(basecapb32 + "====")
+        try:
+            basecapraw=base64.b32decode(basecapb32 + "====")
+        except TypeError:
+            return None
         #Initialize the base keys to None.
         rwcap=None
         rocap=None
@@ -111,3 +116,45 @@ class RootDir:
         self.rootdir=rootdir
     def pathToNode(self,relpath):
         return StorageNode(self.rootdir,relpath)
+
+if __name__ == "__main__":
+    configpath="/etc/minorfs/capfs.json"
+    if not os.path.exists(configpath):
+        print "ERROR: MinorFS2 was not installed properly,",configpath," is missing."
+        exit(1)
+    try:
+        infile=open(configpath,"r")
+    except IOError:
+        print "ERROR: Unexpected IO error trying to open existing config " + configpath
+        sys.exit(2)
+    try:
+        conf=json.load(infile)
+    except ValueError:
+        print "ERROR: The content of " + configpath + " is not valid json."
+        sys.exit(3)
+    infile.close()
+    if not conf.has_key("salt"):
+        print "ERROR: " + configpath + " does not contain a 'salt' section."
+        sys.exit(4)
+    salt=conf["salt"]
+    if len(salt) != 52:
+        print "ERROR: " + configpath + " value of 'salt' should be a 52 byte base32 string."
+        sys.exit(5)
+    try:
+        rawsalt=base64.b32decode(salt + "====")
+    except TypeError:
+        print "ERROR: " + configpath + " value of 'salt' is not a valid base32 string."
+        sys.exit(6)
+    if not conf.has_key("datadir"):
+        print "ERROR: " + configpath + " does not contain a 'datadir' section."
+        sys.exit(7)
+    datadir=conf["datadir"]
+    if not os.path.isdir(datadir):
+        print "ERROR: " + configpath + " value of 'datadir' does not point to an existing directory."
+        sys.exit(8)
+    if not os.access(datadir, os.W_OK):
+        print "ERROR: " + configpath + " value of 'datadir' points to a directory that is not writable to the current user."
+        sys.exit(9)
+    rootdir=RootDir(datadir)
+    lookup=Lookup(rootdir,rawsalt)
+
