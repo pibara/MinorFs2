@@ -164,6 +164,10 @@ class CapFs(fuse.Fuse):
         return -errno.ENOSYS
     def write ( self, path, buf, offset ):
         return -errno.ENOSYS
+    def getxattr(self, path, name, size):
+        return -errno.ENOSYS
+    def listxattr(self, path, size):
+        return -errno.ENOSYS
 
 if __name__ == "__main__":
     fuse.fuse_python_api = (0, 2)
