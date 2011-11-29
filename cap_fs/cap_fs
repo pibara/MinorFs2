@@ -1,19 +1,23 @@
 #!/usr/bin/python
 import fuse
+fuse.fuse_python_api = (0, 2)
 import hashlib
 import base64
 import os
 import stat
 import json
 import sys
+import errno
 class Lookup:
     def __init__(self,rawstorage,salt):
         self.rawstorage = rawstorage
         self.salt=salt
+    def statfs(self):
+        return os.statvfs(self.rawstorage)
     def __call__(self,accesstoken,relpath,succeedcreatable):
         #A valid basecap is 55 characters long.
         if len(accesstoken) != 55:
-            return None
+            return NoNode()
         #The access token starts with either 'rw-' or 'ro-'
         mode=accesstoken[:2]
         #The rest is the base32 representation of a 256 bit key.
@@ -22,7 +26,7 @@ class Lookup:
         try:
             basecapraw=base64.b32decode(basecapb32 + "====")
         except TypeError:
-            return None
+            return NoNode()
         #Initialize the base keys to None.
         rwcap=None
         rocap=None
@@ -45,7 +49,7 @@ class Lookup:
             rocap=accesstoken
         else:
             #Anything else is bogus.
-            return None
+            return NoNode()
         #Set parentrocap to None in case whe have an empty relpath.
         parentcryptokey=None
         for subnodename in relpath.split("/"):
@@ -68,9 +72,9 @@ class Lookup:
                     parentbasenode = self.rawstorage.pathToNode(parentstoragepath)
                     if not parentbasenode.isDir():
                         #If it doesn't, the whole path must be bogus.
-                        return None
+                        return NoNode()
             else:
-                return None
+                return NoNode()
         #If relpath wasn't empty, calculate the new base32 versions of the relevant keys.
         if not parentcryptokey == None:
             rwcap="rw-" + base64.b32encode(rwkey)[:52]
@@ -78,9 +82,10 @@ class Lookup:
         #Now set the crypto key and the read only flag for the node before we return it.
         if readonly:
             basenode.setMeta(None,rocap,cryptokey)
+            return ReadOnlyProxy(basenode)
         else:
             basenode.setMeta(rwcap,rocap,cryptokey)
-        return basenode
+            return basenode
 
 class Node:
     def __init__(self,rootdir,relpath):
@@ -107,70 +112,131 @@ class Node:
             self.rocap=rocap
             self.cryptokey=cryptokey
         return
-    def createAsDir(self):
+    def getattr(self):
         pass
-    def createAsLink(self,old):
+    def readlink(self):
         pass
+    def readdir(self):
+        pass
+    def unlink(self):
+        pass
+    def rmdir(self):
+        pass
+    def symlink(self,path1):
+        pass
+    def rename(self,node):
+        pass
+    def link(self,node):
+        pass
+    def chmod(self,mode):
+        pass
+    def truncate(self,len):
+        pass
+    def mkdir(self,mode):
+        pass
+    def touch(self):
+        pass
+    def access(self,mode):
+        pass
+    def getxattr(self,name,size):
+        pass
+    def listxattr(self,size):
+        pass 
 
 class RootDir:
     def __init__(self,rootdir):
         self.rootdir=rootdir
     def pathToNode(self,relpath):
-        return StorageNode(self.rootdir,relpath)
+        rawnode=StorageNode(self.rootdir,relpath)
+        if rawnode.exists():
+            if rawnode.isFile():
+                return FileNode(rawnode)
+            if rawnode.isDir():
+                return DirNode(rawnode)
+            if rawNode.isLink():
+                return LinkNode(rawnode)
+        if rawnode.creatable():
+            return PreNode(rawnode) 
+        return NoNode()
 
 class CapFs(fuse.Fuse):
-    def __init__(self,lookup,*args,**kw):
+    def __init__(self,lookup):
         self.lookup=lookup
-        fuse.Fuse.__init__(self, *args, **kw)
+        fuse.Fuse.__init__(self)
+        class CapFsFile(object):
+            def __init__(self, path, flags, *mode):
+                self.node=lookup(path)
+                return self.node.open(flags,*mode)
+            def read(self, length, offset):
+                return self.node.read(length, offset)
+            def write(self, buf, offset):
+                return self.node.write(buf, offset)
+            def release(self, flags):
+                return self.node.release(flags)
+            def fsync(self, isfsyncfile):
+                return self.node.fsync(isfsyncfile)
+            def flush(self):
+                return self.node.flush()
+            def fgetattr(self):
+                return self.node.getattr()
+            def ftruncate(self, len):
+                return self.node.truncate(len)
+        self.file_class = CapFsFile
     def getattr(self, path):
-        return -errno.ENOSYS
-    def getdir(self, path):
-        return -errno.ENOSYS
-    def mythread ( self ):
-        return -errno.ENOSYS
-    def chmod ( self, path, mode ):
-        return -errno.ENOSYS
-    def chown ( self, path, uid, gid ):
-        return -errno.ENOSYS
-    def fsync ( self, path, isFsyncFile ):
-        return -errno.ENOSYS
-    def link ( self, targetPath, linkPath ):
-        return -errno.ENOSYS
-    def mkdir ( self, path, mode ):
-        return -errno.ENOSYS
-    def mknod ( self, path, mode, dev ):
-        return -errno.ENOSYS
-    def open ( self, path, flags ):
-        return -errno.ENOSYS
-    def read ( self, path, length, offset ):
-        return -errno.ENOSYS
+        node=self.lookup(path)
+        return node.getattr()
     def readlink ( self, path ):
-        return -errno.ENOSYS
-    def release ( self, path, flags ):
-        return -errno.ENOSYS
-    def rename ( self, oldPath, newPath ):
-        return -errno.ENOSYS
-    def rmdir ( self, path ):
-        return -errno.ENOSYS
-    def statfs ( self ):
-        return -errno.ENOSYS
-    def symlink ( self, targetPath, linkPath ):
-        return -errno.ENOSYS
-    def truncate ( self, path, size ):
-        return -errno.ENOSYS
-    def unlink ( self, path ):
-        return -errno.ENOSYS
-    def utime ( self, path, times ):
-        return -errno.ENOSYS
-    def write ( self, path, buf, offset ):
-        return -errno.ENOSYS
-    def getxattr(self, path, name, size):
-        return -errno.ENOSYS
-    def listxattr(self, path, size):
-        return -errno.ENOSYS
+        node=self.lookup(path)
+        return node.readlink()
+    def readdir(self,path,offset):
+        node=self.lookup(path)
+        return node.readdir()
+    def unlink(self,path):
+        node=self.lookup(path)
+        return node.unlink()
+    def rmdir(self,path):
+        node=self.lookup(path)
+        return node.rmdir()
+    def symlink(self,path,path1):
+        node=self.lookup(path)
+        node.symlink(path1)
+    def rename(self,path,path1):
+        node1=self.lookup(path)
+        node2=self.lookup(path1)
+        return node1.rename(node2)
+    def link(self,path,path1):
+        node1=self.lookup(path)
+        node2=self.lookup(path1)
+        return node1.link(node2)
+    def chmod(self,path,mode):
+        node=self.lookup(path)
+        return node.chmod(mode)
+    def chown(self,path,user,group):
+        return -EPERM
+    def truncate(self,path,len):
+        node=self.lookup(path)
+        node.truncate(len)
+    def mknod(self,path,mode,dev):
+        return -EPERM
+    def mkdir(self,path,mode):
+        node=self.lookup(path)
+        return node.mkdir(mode)
+    def utime(self,path,times):
+        node=self.lookup(path)
+        return node.touch()
+    def access(self,path,mode):
+        node=self.lookup(path)
+        return self.access(mode)
+    def getxattr(self,path,name,size):
+        node=self.lookup(path)
+        return node.getxattr(name,size)
+    def listxattr(self,path,size):
+        node=self.lookup(path)
+        return node.listxattr(size)
+    def statfs(self):
+        return self.lookup.statfs()
 
 if __name__ == "__main__":
-    fuse.fuse_python_api = (0, 2)
     configpath="/etc/minorfs/capfs.json"
     if not os.path.exists(configpath):
         print "ERROR: MinorFS2 was not installed properly,",configpath," is missing."
@@ -204,15 +270,25 @@ if __name__ == "__main__":
     datadir=conf["datadir"]
     if not os.path.isdir(datadir):
         print "ERROR: " + configpath + " value of 'datadir' does not point to an existing directory."
-        sys.exit(8)
+        sys.exit(9)
     if not os.access(datadir, os.W_OK):
         print "ERROR: " + configpath + " value of 'datadir' points to a directory that is not writable to the current user."
         sys.exit(9)
+    if not conf.has_key("mountpoint"):
+        print "ERROR: " + configpath + " does not contain a 'mountpoint' section."
+        sys.exit(10)
+    mountpoint=str(conf["mountpoint"])
+    if not os.path.isdir(mountpoint):
+        print "ERROR: " + configpath + " value of 'mountpoint' does not point to an existing directory."
+        sys.exit(9)
+    
     rootdir=RootDir(datadir)
     lookup=Lookup(rootdir,rawsalt)
-    capfs=CapFs(lookup=lookup)
+    capfs=CapFs(lookup)
     capfs.flags = 0
     capfs.multithreaded = 0
+    capfs.fuse_args.add('allow_other')
+    capfs.fuse_args.setmod('foreground')
+    capfs.fuse_args.mountpoint = mountpoint
     capfs.main()
 
-__init__()
