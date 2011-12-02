@@ -14,7 +14,7 @@ class Lookup:
         self.salt=salt
     def statfs(self):
         return os.statvfs(self.rawstorage)
-    def __call__(self,accesstoken,relpath,succeedcreatable):
+    def __pcall(self,accesstoken,relpath,succeedcreatable):
         #A valid basecap is 55 characters long.
         if len(accesstoken) != 55:
             return NoNode()
@@ -86,8 +86,20 @@ class Lookup:
         else:
             basenode.setMeta(rwcap,rocap,cryptokey)
             return basenode
+    def __call__(self,path,succeedcreatable=False):
+        if path=="/":
+            return TopLevelDir()
+        basecap = path.split("/")[1]
+        relpath=string.join([""]+path.split("/")[2:],"/")
+        return self.__pcall(basecap,relpath,succeedcreatable)
+    def parentnode(self,path):
+        if path=="/":
+            return NoNode()
+        
+ 
+            
 
-class Node:
+class StorageNode:
     def __init__(self,rootdir,relpath):
         self.initialized=False
         self.exists=False
@@ -112,36 +124,412 @@ class Node:
             self.rocap=rocap
             self.cryptokey=cryptokey
         return
-    def getattr(self):
-        pass
-    def readlink(self):
-        pass
-    def readdir(self):
-        pass
-    def unlink(self):
-        pass
-    def rmdir(self):
-        pass
-    def symlink(self,path1):
-        pass
-    def rename(self,node):
-        pass
-    def link(self,node):
-        pass
-    def chmod(self,mode):
-        pass
-    def truncate(self,len):
-        pass
-    def mkdir(self,mode):
-        pass
-    def touch(self):
-        pass
+
+class ReadOnlyProxy:
+    def __init__(self,basenode):
+        self.basenode=basenode
     def access(self,mode):
+        if mode== os.W_OK:
+            return False
+        return self.basenode.access(mode)
+    def chmod(self,mode):
+        return -EPERM
+    def exists(self):
+        return self.basenode.exists()
+    def isDir(self):
+        return self.basenode.isDir()
+    def isFile(self):
+        return self.basenode.isFile()
+    def isLink(self):
+        return self.basenode.isLink()
+    def flush(self):
+        return -EPERM
+    def fsync(isfssyncfile):
+        return -EPERM
+    def getattr(self):
+        return self.basenode.getattr()
+    def getxattr(self,name,size):
+        if name == "cap":
+            name="rocap"
+        return self.basenode.getxattr(name,size)
+    def link(self,nodeold,parentnew):
+        return -EPERM
+    def listxattr(self,size):
+        return self.basenode.listxattr(size)
+    def mkdir(self,modei,parent):
+        return -EPERM
+    def open(self,parent,flags,*mode):
+        if (flags & (os.O_WRONLY | os.O_APPEND | os.O_CREAT | os.O_TRUNC)):
+            return -EPERM
+        return self.basenode.open(parent,flags,mode)
+    def read(length,offset):
+        return self.basenode.read(length,offset)
+    def readdir(self):
+        return self.basenode.readdir()
+    def readlink(self):
+        return self.basenode.readlink()
+    def release(self,flags):
+        return self.basenode.release(flags)
+    def rename(self,nodenew,parentold,parentnew):
+        return -EPERM
+    def rmdir(self,parent):
+        return -EPERM
+    def setMeta(self,rwcap,rocap,cryptokey):
+        return self.basenode.setMeta(None,rocap,cryptokey)
+    def symlink(self,pathold,parentnew):
+        return -EPERM
+    def touch(self):
+        return -EPERM
+    def truncate(self,len):
+        return -EPERM
+    def unlink(self,parent):
+        return -EPERM
+    def write(self,buf,offset):
+        return -EPERM
+
+class NoNode:
+    def access(self,mode):
+        return -ENOENT
+    def chmod(self,mode):
+        return -ENOENT
+    def exists(self):
+        return False
+    def isDir(self):
+        return False
+    def isFile(self):
+        return False
+    def isLink(self):
+        return False
+    def flush(self):
+        return -ENOENT
+    def fsync(isfssyncfile):
+        return -ENOENT
+    def getattr(self):
+        return -ENOENT
+    def getxattr(self,name,size):
+        return -ENOENT
+    def link(self,nodeold,parentnew):
+        return -ENOENT
+    def listxattr(self,size):
+        return -ENOENT
+    def mkdir(self,modei,parent):
+        return -ENOENT
+    def open(self,parent,flags,*mode):
+        return -ENOENT
+    def read(length,offset):
+        return -ENOENT
+    def readdir(self):
+        return -ENOENT
+    def readlink(self):
+        return -ENOENT
+    def release(self,flags):
+        return -ENOENT
+    def rename(self,nodenew,parentold,parentnew):
+        return -ENOENT
+    def rmdir(self,parent):
+        return -ENOENT
+    def setMeta(self,rwcap,rocap,cryptokey):
+        pass
+    def symlink(self,pathold,parentnew):
+        return -ENOENT
+    def touch(self):
+        return -ENOENT
+    def truncate(self,len):
+        return -ENOENT
+    def unlink(self,parent):
+        return -ENOENT
+    def write(self,buf,offset):
+        return -ENOENT
+
+class TopLevelDir:
+    def access(self,mode):
+        if mode== os.W_OK:
+            return False
+        return True
+    def chmod(self,mode):
+        return -EPERM
+    def exists(self):
+        return True
+    def isDir(self):
+        return True
+    def isFile(self):
+        return False
+    def isLink(self):
+        return False
+    def flush(self):
+        return -ENOSUP
+    def fsync(isfssyncfile):
+        return -ENOSUP
+    def getattr(self):
+        #FIXME: empty dir stat needed
         pass
     def getxattr(self,name,size):
-        pass
+        if size:
+            return 0
+        return ""
+    def link(self,nodeold,parentnew):
+        return -ENOSUP
     def listxattr(self,size):
-        pass 
+        if size:
+            return 0
+        return []
+    def mkdir(self,modei,parent):
+        return -EPERM
+    def open(self,parent,flags,*mode):
+        return -ENOSUP
+    def read(length,offset):
+        return -ENOSUP
+    def readdir(self):
+        return []
+    def readlink(self):
+        return -ENOSUP
+    def release(self,flags):
+        return -ENOSUP
+    def rename(self,nodenew,parentold,parentnew):
+        return -EPERM
+    def rmdir(self,parent):
+        return -EPERM
+    def setMeta(self,rwcap,rocap,cryptokey):
+        pass
+    def symlink(self,pathold,parentnew):
+        return -ENOSUP
+    def touch(self):
+        return -EPERM
+    def truncate(self,len):
+        return -ENOSUP
+    def unlink(self,parent):
+        return -EPERM
+    def write(self,buf,offset):
+        return -ENOSUP
+#FIXME
+class FileNode:
+    def __init__(self,basenode):
+        self.basenode=basenode
+    def access(self,mode):
+        return self.basenode.access(mode)
+    def chmod(self,mode):
+        #FIXME: real chmod
+        return 0
+    def exists(self):
+        return True
+    def isDir(self):
+        return False
+    def isFile(self):
+        return True
+    def isLink(self):
+        return False
+    def flush(self):
+        return self.basenode.flush()
+    def fsync(isfssyncfile):
+        return self.basenode.fsync(isfssyncfile)
+    def getattr(self):
+        return self.basenode.getattr()
+    def getxattr(self,name,size):
+        return self.basenode.getxattr(name,size)
+    def link(self,nodeold,parentnew):
+        return -EPERM
+    def listxattr(self,size):
+        return self.basenode.listxattr(size)
+    def mkdir(self,modei,parent):
+        return -EPERM
+    def open(self,parent,flags,*mode):
+        pass
+    def read(length,offset):
+        return self.basenode.reead(length,offset)
+    def readdir(self):
+        return -ENOSUP
+    def readlink(self):
+        return -ENOSUP
+    def release(self,flags):
+        return self.basenode.release(flags)
+    def rename(self,nodenew,parentold,parentnew):
+        return self.basenode.rename(nodenew,parentold,parentnew)
+    def rmdir(self,parent):
+        return -ENOSUP
+    def setMeta(self,rwcap,rocap,cryptokey):
+        return self.basenode.setMeta(rwcap,rocap,cryptokey)
+    def symlink(self,pathold,parentnew):
+        return -EPERM
+    def touch(self):
+        return self.basenode.touch()
+    def truncate(self,len):
+        return self.basenode.truncate(len)
+    def unlink(self,parent):
+        return self.basenode.unlink(parent)
+    def write(self,buf,offset):
+        return self.basenode.write(buf,offset)
+#FIXME
+class DirNode:
+    def __init__(self,basenode):
+        self.basenode=basenode
+    def access(self,mode):
+        return self.basenode.access(mode)
+    def chmod(self,mode):
+        #FIXME: real chmod
+        return 0
+    def exists(self):
+        return True
+    def isDir(self):
+        return False
+    def isFile(self):
+        return True
+    def isLink(self):
+        return False
+    def flush(self):
+        return self.basenode.flush()
+    def fsync(isfssyncfile):
+        return self.basenode.fsync(isfssyncfile)
+    def getattr(self):
+        return self.basenode.getattr()
+    def getxattr(self,name,size):
+        return self.basenode.getxattr(name,size)
+    def link(self,nodeold,parentnew):
+        return -EPERM
+    def listxattr(self,size):
+        return self.basenode.listxattr(size)
+    def mkdir(self,modei,parent):
+        return -EPERM
+    def open(self,parent,flags,*mode):
+        pass
+    def read(length,offset):
+        return self.basenode.reead(length,offset)
+    def readdir(self):
+        return -ENOSUP
+    def readlink(self):
+        return -ENOSUP
+    def release(self,flags):
+        return self.basenode.release(flags)
+    def rename(self,nodenew,parentold,parentnew):
+        return self.basenode.rename(nodenew,parentold,parentnew)
+    def rmdir(self,parent):
+        return -ENOSUP
+    def setMeta(self,rwcap,rocap,cryptokey):
+        return self.basenode.setMeta(rwcap,rocap,cryptokey)
+    def symlink(self,pathold,parentnew):
+        return -EPERM
+    def touch(self):
+        return self.basenode.touch()
+    def truncate(self,len):
+        return self.basenode.truncate(len)
+    def unlink(self,parent):
+        return self.basenode.unlink(parent)
+    def write(self,buf,offset):
+        return self.basenode.write(buf,offset)
+#FIXME
+class LinkNode:
+    def __init__(self,basenode):
+        self.basenode=basenode
+    def access(self,mode):
+        return self.basenode.access(mode)
+    def chmod(self,mode):
+        #FIXME: real chmod
+        return 0
+    def exists(self):
+        return True
+    def isDir(self):
+        return False
+    def isFile(self):
+        return True
+    def isLink(self):
+        return False
+    def flush(self):
+        return self.basenode.flush()
+    def fsync(isfssyncfile):
+        return self.basenode.fsync(isfssyncfile)
+    def getattr(self):
+        return self.basenode.getattr()
+    def getxattr(self,name,size):
+        return self.basenode.getxattr(name,size)
+    def link(self,nodeold,parentnew):
+        return -EPERM
+    def listxattr(self,size):
+        return self.basenode.listxattr(size)
+    def mkdir(self,modei,parent):
+        return -EPERM
+    def open(self,parent,flags,*mode):
+        pass
+    def read(length,offset):
+        return self.basenode.reead(length,offset)
+    def readdir(self):
+        return -ENOSUP
+    def readlink(self):
+        return -ENOSUP
+    def release(self,flags):
+        return self.basenode.release(flags)
+    def rename(self,nodenew,parentold,parentnew):
+        return self.basenode.rename(nodenew,parentold,parentnew)
+    def rmdir(self,parent):
+        return -ENOSUP
+    def setMeta(self,rwcap,rocap,cryptokey):
+        return self.basenode.setMeta(rwcap,rocap,cryptokey)
+    def symlink(self,pathold,parentnew):
+        return -EPERM
+    def touch(self):
+        return self.basenode.touch()
+    def truncate(self,len):
+        return self.basenode.truncate(len)
+    def unlink(self,parent):
+        return self.basenode.unlink(parent)
+    def write(self,buf,offset):
+        return self.basenode.write(buf,offset)
+#FIXME
+class PreNode:
+    def __init__(self,basenode):
+        self.basenode=basenode
+    def access(self,mode):
+        return self.basenode.access(mode)
+    def chmod(self,mode):
+        #FIXME: real chmod
+        return 0
+    def exists(self):
+        return True
+    def isDir(self):
+        return False
+    def isFile(self):
+        return True
+    def isLink(self):
+        return False
+    def flush(self):
+        return self.basenode.flush()
+    def fsync(isfssyncfile):
+        return self.basenode.fsync(isfssyncfile)
+    def getattr(self):
+        return self.basenode.getattr()
+    def getxattr(self,name,size):
+        return self.basenode.getxattr(name,size)
+    def link(self,nodeold,parentnew):
+        return -EPERM
+    def listxattr(self,size):
+        return self.basenode.listxattr(size)
+    def mkdir(self,modei,parent):
+        return -EPERM
+    def open(self,parent,flags,*mode):
+        pass
+    def read(length,offset):
+        return self.basenode.reead(length,offset)
+    def readdir(self):
+        return -ENOSUP
+    def readlink(self):
+        return -ENOSUP
+    def release(self,flags):
+        return self.basenode.release(flags)
+    def rename(self,nodenew,parentold,parentnew):
+        return self.basenode.rename(nodenew,parentold,parentnew)
+    def rmdir(self,parent):
+        return -ENOSUP
+    def setMeta(self,rwcap,rocap,cryptokey):
+        return self.basenode.setMeta(rwcap,rocap,cryptokey)
+    def symlink(self,pathold,parentnew):
+        return -EPERM
+    def touch(self):
+        return self.basenode.touch()
+    def truncate(self,len):
+        return self.basenode.truncate(len)
+    def unlink(self,parent):
+        return self.basenode.unlink(parent)
+    def write(self,buf,offset):
+        return self.basenode.write(buf,offset)
+
 
 class RootDir:
     def __init__(self,rootdir):
@@ -165,8 +553,9 @@ class CapFs(fuse.Fuse):
         fuse.Fuse.__init__(self)
         class CapFsFile(object):
             def __init__(self, path, flags, *mode):
-                self.node=lookup(path)
-                return self.node.open(flags,*mode)
+                self.node=lookup(path,True)
+                parent=lookup(os.path.dirname(path))
+                return self.node.open(parent,flags,*mode)
             def read(self, length, offset):
                 return self.node.read(length, offset)
             def write(self, buf, offset):
@@ -193,21 +582,27 @@ class CapFs(fuse.Fuse):
         return node.readdir()
     def unlink(self,path):
         node=self.lookup(path)
-        return node.unlink()
+        parent=lookup(os.path.dirname(path))
+        return node.unlink(parent)
     def rmdir(self,path):
         node=self.lookup(path)
-        return node.rmdir()
-    def symlink(self,path,path1):
-        node=self.lookup(path)
-        node.symlink(path1)
-    def rename(self,path,path1):
-        node1=self.lookup(path)
-        node2=self.lookup(path1)
-        return node1.rename(node2)
-    def link(self,path,path1):
-        node1=self.lookup(path)
-        node2=self.lookup(path1)
-        return node1.link(node2)
+        parent=lookup(os.path.dirname(path))
+        return node.rmdir(parent)
+    def symlink(self,pathold,pathnew):
+        nodenew=self.lookup(pathnew,True)
+        parentnew=lookup(os.path.dirname(pathnew))
+        return nodenew.symlink(pathold,parentnew)
+    def rename(self,pathold,pathnew):
+        nodeold=self.lookup(pathold)
+        parentold=lookup(os.path.dirname(pathold))
+        nodenew=self.lookup(path1,True)
+        parentnew=lookup(os.path.dirname(pathnew))
+        return nodeold.rename(nodenew,parentold,parentnew)
+    def link(self,pathold,pathnew):
+        nodeold=self.lookup(pathold)
+        nodenew=self.lookup(pathnew)
+        parentnew=self.lookup(os.path.dirname(pathnew))
+        return nodenew.link(nodeold,parentnew)
     def chmod(self,path,mode):
         node=self.lookup(path)
         return node.chmod(mode)
@@ -220,7 +615,8 @@ class CapFs(fuse.Fuse):
         return -EPERM
     def mkdir(self,path,mode):
         node=self.lookup(path)
-        return node.mkdir(mode)
+        parent=self.lookup(os.path.dirname(path))
+        return node.mkdir(mode,parent)
     def utime(self,path,times):
         node=self.lookup(path)
         return node.touch()
