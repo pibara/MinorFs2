@@ -95,17 +95,35 @@ class Lookup:
     def parentnode(self,path):
         if path=="/":
             return NoNode()
-        
-class StorageNode:
-    def __init__(self,rootdir,relpath):
+
+#Simple wrapper for access to the raw storage. Unfinished!        
+class RawStorageNode:
+    def __init__(self,rootdir,relpath,cryptomodule):
         self.initialized=False
         self.exists=False
         self.nodetype=0
-        fullpath=rootdir + relpath
-        if os.path.exists(fullpath):
+        self.fullpath=rootdir + relpath
+        self.stat=None
+        if os.path.exists(self.fullpath):
             self.exists=True
-            #Fixme: explain this
-            self.nodetype = (os.stat(fullpath).st_mode & 070) >> 3
+            self.stat=os.stat(self.fullpath)
+            #Given that cap_fs runs as capfs user being the only user in the capfs group, the 'group' access control bits
+            #are unused. We use them to piggyback our node type on. 4 represents common files, 6 represents directories and
+            #7 represents symbolic links. Other node types are (currently) not supported by cap_fs. 
+            self.nodetype = (self.stat.st_mode & 070) >> 3
+            #Depending on the type update the mode.
+            if self.nodetype == 4:
+                #A file is either non executable (0666) or executable (0777)
+                if self.stat.st_mode & 0100:
+                    self.stat.st_mode = 0777
+                else:
+                    self.stat.st_mode = 0666
+            elif self.nodetype == 6:
+                #Directories have mode 0777
+                self.stat.st_mode = 0777 & stat.S_IFDIR
+            elif self.nodetype == 7:
+                #Symbolic links have mode 0777
+                self.stat.st_mode = 0777 & stat.S_IFLNK
     def exists(self):
         return self.exists
     def isFile(self):
@@ -121,7 +139,42 @@ class StorageNode:
             self.rocap=rocap
             self.cryptokey=cryptokey
         return
-    #FIXME: add and implement any method invoked by the below node classes.
+    def getattr(self):
+        return self.stat
+    def getxattr(self,name):
+        if name == "user.cap":
+            return self.rwcap
+        if name == "user.rocap":
+            return self.rocap
+    def listxattr(self):
+        return ["user.cap","user.rocap"]
+    def open(self,flags,mode):
+        try:
+            self.file=os.open(self.fullpath,flags,mode & 0740)
+        except:
+            return -EPERM
+        self.exists = True
+    def read(self,len,offset):
+        return self.file.read(len,offset)
+    def release(self):
+        self.file.close()
+        self.file=None
+    def chmod(mode):
+        return os.chmod(self.fullpath,mode)
+    def getErrno(self):
+        return self.errno
+    def touch(self):
+        os.utime(self.fullpath,None)
+    def truncate(self,len):
+        with open(fullpath, 'r+') as f:
+            f.truncate(len)
+    def unlink(self):
+        os.unlink(self.fullpath)
+    def allData(self):
+        fh=open(self.fullpath,"r")
+        return fh.read() 
+    def link(self,path):
+        os.link(path,self.fullpath)    
 
 class ReadOnlyProxy:
     def __init__(self,basenode):
@@ -146,14 +199,14 @@ class ReadOnlyProxy:
         return -EPERM
     def getattr(self):
         return self.basenode.getattr()
-    def getxattr(self,name,size):
-        if name == "cap":
-            name="rocap"
-        return self.basenode.getxattr(name,size)
+    def getxattr(self,name):
+        if name == "user.cap":
+            name="user.rocap"
+        return self.basenode.getxattr(name)
     def link(self,nodeold,parentnew):
         return -EPERM
-    def listxattr(self,size):
-        return self.basenode.listxattr(size)
+    def listxattr(self):
+        return self.basenode.listxattr()
     def mkdir(self,modei,parent):
         return -EPERM
     def open(self,parent,flags,*mode):
@@ -204,11 +257,11 @@ class NoNode:
         return -ENOENT
     def getattr(self):
         return -ENOENT
-    def getxattr(self,name,size):
+    def getxattr(self,name):
         return -ENOENT
     def link(self,nodeold,parentnew):
         return -ENOENT
-    def listxattr(self,size):
+    def listxattr(self):
         return -ENOENT
     def mkdir(self,modei,parent):
         return -ENOENT
@@ -261,13 +314,13 @@ class TopLevelDir:
     def getattr(self):
         #FIXME: empty dir stat needed
         pass
-    def getxattr(self,name,size):
+    def getxattr(self,name):
         if size:
             return 0
         return ""
     def link(self,nodeold,parentnew):
         return -ENOSUP
-    def listxattr(self,size):
+    def listxattr(self):
         if size:
             return 0
         return []
@@ -331,17 +384,17 @@ class FileNode:
             return -ENOSUP
     def getattr(self):
         return self.basenode.getattr()
-    def getxattr(self,name,size):
-        return self.basenode.getxattr(name,size)
+    def getxattr(self,name):
+        return self.basenode.getxattr(name)
     def link(self,nodeold,parentnew):
         return -EEXIST
-    def listxattr(self,size):
-        return self.basenode.listxattr(size)
+    def listxattr(self):
+        return self.basenode.listxattr()
     def mkdir(self,modei,parent):
         return -EPERM
     def open(self,parent,flags,*mode):
         try:
-            self.mFile = self.basenode.openFile(parent,flags,*mode)
+            self.mFile = self.basenode.open(parent,flags,*mode)
             return 0
         except:
             return self.basenode.getErrno()
@@ -400,12 +453,12 @@ class DirNode:
         return -ENOSUP
     def getattr(self):
         return self.basenode.getattr()
-    def getxattr(self,name,size):
-        return self.basenode.getxattr(name,size)
+    def getxattr(self,name):
+        return self.basenode.getxattr(name)
     def link(self,nodeold,parentnew):
         return -EEXIST
-    def listxattr(self,size):
-        return self.basenode.listxattr(size)
+    def listxattr(self):
+        return self.basenode.listxattr()
     def mkdir(self,modei,parent):
         return -EEXIST
     def open(self,parent,flags,*mode):
@@ -426,7 +479,7 @@ class DirNode:
         entries=json.loads(infile)
         if len(entries) > 0:
             return -ENOTEMPTY
-        return self.basenode.remove(parent)
+        return self.basenode.removedir(parent)
     def setMeta(self,rwcap,rocap,cryptokey):
         return self.basenode.setMeta(rwcap,rocap,cryptokey)
     def symlink(self,pathold,parentnew):
@@ -461,12 +514,12 @@ class LinkNode:
         return -ENOSUP
     def getattr(self):
         return self.basenode.getattr()
-    def getxattr(self,name,size):
-        return self.basenode.getxattr(name,size)
+    def getxattr(self,name):
+        return self.basenode.getxattr(name)
     def link(self,nodeold,parentnew):
         return -EPERM
-    def listxattr(self,size):
-        return self.basenode.listxattr(size)
+    def listxattr(self):
+        return self.basenode.listxattr()
     def mkdir(self,modei,parent):
         return -EPERM
     def open(self,parent,flags,*mode):
@@ -528,15 +581,14 @@ class PreNode:
             return self.mFile.getattr()
         else:
             return -ENOSUP
-    def getxattr(self,name,size):
+    def getxattr(self,name):
         return -ENOENT
     def has_key(self,key):
         #FIXME: check if dir contents has a named entry.
         pass
     def link(self,nodeold,parentnew):
-        #FIXME: create this file as a link to an excisting file
-        pass
-    def listxattr(self,size):
+        return self.basenode.link(nodeold,parentnew)
+    def listxattr(self):
         return -ENOENT
     def mkdir(self,modei,parent):
         #FIXME: create empty dir json and create our new node with it as contents (mode 0760 for dir).
@@ -544,7 +596,7 @@ class PreNode:
     def open(self,parent,flags,*mode):
         if flags & os.O_CREAT:
             try:
-                self.mFile = self.basenode.openFile(parent,flags,*mode)
+                self.mFile = self.basenode.open(parent,flags,*mode)
                 return 0
             except:
                 return self.basenode.getErrno()
@@ -592,11 +644,11 @@ class PreNode:
             return -ENOSUP
 
 
-class RootDir:
+class RawStorageRootDir:
     def __init__(self,rootdir):
         self.rootdir=rootdir
     def pathToNode(self,relpath):
-        rawnode=StorageNode(self.rootdir,relpath)
+        rawnode=RawStorageNode(self.rootdir,relpath)
         if rawnode.exists():
             if rawnode.isFile():
                 return FileNode(rawnode)
@@ -686,10 +738,17 @@ class CapFs(fuse.Fuse):
         return self.access(mode)
     def getxattr(self,path,name,size):
         node=self.lookup(path)
-        return node.getxattr(name,size)
+        xattr=node.getxattr(name)
+        if size== 0:
+            return len(xattr)
+        return xattr
     def listxattr(self,path,size):
         node=self.lookup(path)
-        return node.listxattr(size)
+        attrlist=node.listxattr()
+        if size == 0:
+            return len(attrlist)+len("".join(attrlist))
+        else:
+            return attrlist
     def statfs(self):
         return self.lookup.statfs()
 
@@ -739,8 +798,8 @@ if __name__ == "__main__":
         print "ERROR: " + configpath + " value of 'mountpoint' does not point to an existing directory."
         sys.exit(9)
     
-    rootdir=RootDir(datadir)
-    lookup=Lookup(rootdir,rawsalt)
+    rawstoragerootdir=RawStorageRootDir(datadir)
+    lookup=Lookup(rawstoragerootdir,rawsalt)
     capfs=CapFs(lookup)
     capfs.flags = 0
     capfs.multithreaded = 0
