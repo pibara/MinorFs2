@@ -9,11 +9,11 @@ import json
 import sys
 import errno
 class Lookup:
-    def __init__(self,rawstorage,salt):
-        self.rawstorage = rawstorage
+    def __init__(self,rawstoragerootdir,salt):
+        self.rawstoragerootdir = rawstoragerootdir
         self.salt=salt
     def statfs(self):
-        return os.statvfs(self.rawstorage)
+        return os.statvfs(self.rawstoragerootdir)
     def __pcall(self,accesstoken,relpath,succeedcreatable):
         #A valid basecap is 55 characters long.
         if len(accesstoken) != 55:
@@ -61,7 +61,7 @@ class Lookup:
         #Now first look at the leaf node only, calculate the storage key, storage path and check it it exists.
         storagekey = base64.b32encode(str(hashlib.sha256(cryptokey + self.salt ).digest()))[:52]  
         storagepath = "/" + storagekey[:2] + "/" + storagekey[2:4] + "/" + storagekey[4:]      
-        basenode = self.rawstorage.pathToNode(storagepath)
+        basenode = self.rawstoragerootdir.pathToNode(storagepath)
         if not basenode.exists():
             if succeedcreatable:
                 #If it does not exist, that might be OK if the succeedcreatable function argument is set.
@@ -69,7 +69,7 @@ class Lookup:
                     #If we do have a parent node but our current node does not exist and is directory,than at least our parent node MUST exist.
                     parentstoragekey = base64.b32encode(str(hashlib.sha256(parentcryptokey + self.salt ).digest()))[:52]
                     parentstoragepath = "/" + parentstoragekey[:2] + "/" + parentstoragekey[2:4] + "/" + parentstoragekey[4:]
-                    parentbasenode = self.rawstorage.pathToNode(parentstoragepath)
+                    parentbasenode = self.rawstoragerootdir.pathToNode(parentstoragepath)
                     if not parentbasenode.isDir():
                         #If it doesn't, the whole path must be bogus.
                         return NoNode()
@@ -95,6 +95,50 @@ class Lookup:
     def parentnode(self,path):
         if path=="/":
             return NoNode()
+
+#Helper class for making the implementation of different cryptoboxes less redundant.
+#This class maps random reads and writes to the block boundaries used by the crypto
+#module.
+class CryptoProxy:
+    def __init__(self,cryptobox,cryptoblocksize):
+        self.cryptobox=cryptobox
+        self.cryptoblocksize=cryptoblocksize
+    def read(self,cryptofile,length,offset):
+        readoffset=(offset / self.cryptoblocksize) * self.cryptoblocksize
+        frontslacksize=readoffset - offset
+        tailoffset=frontslacksize + length
+        readlength=(((tailoffset -1)/self.cryptoblocksize)+1)*self.cryptoblocksize
+        cryptoblock=cryptofile.read(readlength,readoffset)
+        block=self.cryptobox.decrypt(readoffset,cryptoblock)
+        return block[frontslacksize:tailoffset]    
+    def write(self,cryptofile,offset,data):
+        length=len(data)
+        readoffset=(offset / self.cryptoblocksize) * self.cryptoblocksize
+        frontslacksize=readoffset - offset
+        tailoffset=frontslacksize + length
+        readlength=(((tailoffset -1)/self.cryptoblocksize)+1)*self.cryptoblocksize
+        if readlength != length:
+            oldcryptoblock=cryptofile.read(readlength,readoffset)
+            oldblock=self.cryptobox.decrypt(readoffset,cryptoblock)
+            data=oldblock[:frontslacksize] + data + oldblock[readlength:]
+        cryptodata=self.cryptobox.encrypt(data)
+        return cryptofile.write(readoffset,cryptodata) 
+
+
+#Simple crypto box for the NULL crypto algoritm.            
+class NullCryptoBox:
+    def __init__(self,key):
+        self.key=key
+    def encrypt(self,offset,data):
+        return data
+    def decrypt(self,offset,data):
+        return data
+
+#Simple crypto module for the NULL crypto algoritm.
+class NullCryptoModule:
+    def getCryptoBox(self,cryptokey):
+        cryptobox=NullCryptoBox(cryptokey)
+        return CryptoProxy(cryptobox,1) 
 
 #Simple wrapper for access to the raw storage. Unfinished!        
 class RawStorageNode:
@@ -152,7 +196,7 @@ class RawStorageNode:
         return ["user.cap","user.rocap"]
     def open(self,flags,mode):
         try:
-            self.file=os.open(self.fullpath,flags,mode & 0740)
+            self.file=os.open(self.fullpath,flags,mode & 0770)
         except:
             return -EPERM
         self.exists = True
