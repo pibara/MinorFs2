@@ -104,6 +104,8 @@ class RawStorageNode:
         self.nodetype=0
         self.fullpath=rootdir + relpath
         self.stat=None
+        self.cryptomodule=cryptomodule
+        self.file=None
         if os.path.exists(self.fullpath):
             self.exists=True
             self.stat=os.stat(self.fullpath)
@@ -137,7 +139,7 @@ class RawStorageNode:
             self.initialized = True
             self.rwcap=rwcap
             self.rocap=rocap
-            self.cryptokey=cryptokey
+            self.cryptobox=self.cryptomodule.getCryptoBox(cryptokey)
         return
     def getattr(self):
         return self.stat
@@ -155,7 +157,9 @@ class RawStorageNode:
             return -EPERM
         self.exists = True
     def read(self,len,offset):
-        return self.file.read(len,offset)
+        return self.cryptobox.read(self.file,len,offset)
+    def write(self,offset,data):
+        return self.cryptobox.write(self.file,offset,data)
     def release(self):
         self.file.close()
         self.file=None
@@ -170,9 +174,6 @@ class RawStorageNode:
             f.truncate(len)
     def unlink(self):
         os.unlink(self.fullpath)
-    def allData(self):
-        fh=open(self.fullpath,"r")
-        return fh.read() 
     def link(self,path):
         os.link(path,self.fullpath)    
 
