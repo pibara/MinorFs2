@@ -140,16 +140,10 @@ class NullCryptoModule:
         cryptobox=NullCryptoBox(cryptokey)
         return CryptoProxy(cryptobox,1) 
 
-#Simple wrapper for access to the raw storage. Unfinished!        
+#Simple wrapper for access to the raw storage.  
 class RawStorageNode:
-    def __init__(self,rootdir,relpath,cryptomodule):
-        self.initialized=False
-        self.exists=False
-        self.nodetype=0
-        self.fullpath=rootdir + relpath
-        self.stat=None
-        self.cryptomodule=cryptomodule
-        self.file=None
+    #Private function for (re) initializing based on file mode.
+    def __dostat(self):
         if os.path.exists(self.fullpath):
             self.exists=True
             self.stat=os.stat(self.fullpath)
@@ -170,6 +164,16 @@ class RawStorageNode:
             elif self.nodetype == 7:
                 #Symbolic links have mode 0777
                 self.stat.st_mode = 0777 & stat.S_IFLNK
+    #Constructor
+    def __init__(self,rootdir,relpath,cryptomodule):
+        self.initialized=False
+        self.exists=False
+        self.nodetype=0
+        self.fullpath=rootdir + relpath
+        self.stat=None
+        self.cryptomodule=cryptomodule
+        self.file=None
+        self.__dostat()
     def exists(self):
         return self.exists
     def isFile(self):
@@ -178,6 +182,7 @@ class RawStorageNode:
         return self.nodetype==6
     def isLink(self):
         return self.nodetype==7
+    #Second step of initialisation
     def setMeta(self,rwcap,rocap,cryptokey):
         if not self.initialized:
             self.initialized = True
@@ -188,39 +193,49 @@ class RawStorageNode:
     def getattr(self):
         return self.stat
     def getxattr(self,name):
+        #The raw storage has a read+write and a read-only attribute.
         if name == "user.cap":
             return self.rwcap
         if name == "user.rocap":
             return self.rocap
     def listxattr(self):
         return ["user.cap","user.rocap"]
-    def open(self,flags,mode):
+    def open(self,flags,mode,nodetype):
+        #The 'group' bits are the node type.
+        nodetypemask = (nodetype & 0007) << 3
+        #All node's are to be r+w, so only the 'x' flag of the mode is relevant.
+        exeflag = mode & 0100
+        filemode=exeflag | 0600 | nodetypemask
         try:
-            self.file=os.open(self.fullpath,flags,mode & 0770)
+            myfile=os.open(self.fullpath,flags,filemode)
         except:
             return -EPERM
-        self.exists = True
-    def read(self,len,offset):
-        return self.cryptobox.read(self.file,len,offset)
-    def write(self,offset,data):
-        return self.cryptobox.write(self.file,offset,data)
-    def release(self):
-        self.file.close()
-        self.file=None
+        if not self.exists:
+            #If the file didn't already exist before, run the _dostat initialization again.
+            self.__dostat()
+        return myfile
     def chmod(mode):
-        return os.chmod(self.fullpath,mode)
-    def getErrno(self):
-        return self.errno
+        #All node's are to be r+w, so only the 'x' flag of the mode is relevant.
+        exeflag = mode & 0100
+        #The 'group' bits are the node type.
+        nodetypemask = (self.nodetype & 0007) << 3
+        newmode = exeflag | 0600 |  nodetypemask
+        os.chmod(self.fullpath,newmode)
+        #If the node type is 'file', we update our external mode according to the exe flag.
+        if self.nodetype == 4:
+            if exeflag:
+                self.stat.st_mode = 0777
+            else:
+                self.stat.st_mode = 0666
     def touch(self):
         os.utime(self.fullpath,None)
-    def truncate(self,len):
-        with open(fullpath, 'r+') as f:
-            f.truncate(len)
     def unlink(self):
         os.unlink(self.fullpath)
     def link(self,path):
-        os.link(path,self.fullpath)    
+        os.link(path,self.fullpath)
 
+#Wrapper class for regular node that disalows any writing action and removes
+#the r/w extended attributes from the extended attributes list.
 class ReadOnlyProxy:
     def __init__(self,basenode):
         self.basenode=basenode
@@ -245,13 +260,13 @@ class ReadOnlyProxy:
     def getattr(self):
         return self.basenode.getattr()
     def getxattr(self,name):
-        if name == "user.cap":
-            name="user.rocap"
-        return self.basenode.getxattr(name)
+        if name="user.rocap":
+            return self.basenode.getxattr(name)
+        return ""
     def link(self,nodeold,parentnew):
         return -EPERM
     def listxattr(self):
-        return self.basenode.listxattr()
+        return ["user.rocap"]
     def mkdir(self,modei,parent):
         return -EPERM
     def open(self,parent,flags,*mode):
@@ -283,6 +298,7 @@ class ReadOnlyProxy:
     def write(self,buf,offset):
         return -EPERM
 
+#Node type for no node at all.
 class NoNode:
     def access(self,mode):
         return -ENOENT
@@ -337,6 +353,8 @@ class NoNode:
     def write(self,buf,offset):
         return -ENOENT
 
+#Node representing the no authority cap_fs top dir.
+#This basically looks like an empty read only dir.
 class TopLevelDir:
     def access(self,mode):
         if mode== os.W_OK:
@@ -357,6 +375,7 @@ class TopLevelDir:
     def fsync(isfssyncfile):
         return -ENOSUP
     def getattr(self):
+        mode = 0555
         #FIXME: empty dir stat needed
         pass
     def getxattr(self,name):
@@ -405,16 +424,13 @@ class FileNode:
     def access(self,mode):
         return True
     def chmod(self,mode):
-        if mode & 0111:
-            return self.basenode.chmod(0740)
-        else:
-            return self.basenode.chmod(0640)
+        self.basenode.chmod(mode)
     def exists(self):
-        return True
+        return self.basenode.exists()
     def isDir(self):
         return False
     def isFile(self):
-        return True
+        return self.basenode.exists()
     def isLink(self):
         return False
     def flush(self):
