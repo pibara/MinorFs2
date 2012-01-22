@@ -229,10 +229,17 @@ class RawStorageNode:
                 self.stat.st_mode = 0666
     def touch(self):
         os.utime(self.fullpath,None)
+        self.__dostat()
     def unlink(self):
         os.unlink(self.fullpath)
+        self.exists=False
     def link(self,path):
+        if self.exists():
+            return -EEXISTS
         os.link(path,self.fullpath)
+        self.__dostat()
+    def rawPath(self):
+        return self.fullpath
 
 #Wrapper class for regular node that disalows any writing action and removes
 #the r/w extended attributes from the extended attributes list.
@@ -260,7 +267,7 @@ class ReadOnlyProxy:
     def getattr(self):
         return self.basenode.getattr()
     def getxattr(self,name):
-        if name="user.rocap":
+        if name=="user.rocap":
             return self.basenode.getxattr(name)
         return ""
     def link(self,nodeold,parentnew):
@@ -353,6 +360,19 @@ class NoNode:
     def write(self,buf,offset):
         return -ENOENT
 
+class TopDirStat(fuse.Stat):
+  def __init__(self):
+      self.st_mode = stat.S_IFDIR | 0555
+      self.st_ino = 0
+      self.st_dev = 0
+      self.st_nlink = 3
+      self.st_uid = 0
+      self.st_gid = 0
+      self.st_size = 4096
+      self.st_atime = 0
+      self.st_mtime = 0
+      self.st_ctime = 0
+
 #Node representing the no authority cap_fs top dir.
 #This basically looks like an empty read only dir.
 class TopLevelDir:
@@ -375,9 +395,7 @@ class TopLevelDir:
     def fsync(isfssyncfile):
         return -ENOSUP
     def getattr(self):
-        mode = 0555
-        #FIXME: empty dir stat needed
-        pass
+        return TopDirStat()
     def getxattr(self,name):
         if size:
             return 0
@@ -453,12 +471,9 @@ class FileNode:
         return self.basenode.listxattr()
     def mkdir(self,modei,parent):
         return -EPERM
-    def open(self,parent,flags,*mode):
-        try:
-            self.mFile = self.basenode.open(parent,flags,*mode)
-            return 0
-        except:
-            return self.basenode.getErrno()
+    def open(self,flags,mode):
+        self.mFile = self.basenode.open(flags,mode,4)
+        return 0
     def read(self,length,offset):
         if self.mFile != None:
             return self.mFile.read(length,offset)
@@ -473,8 +488,12 @@ class FileNode:
             return self.mFile.release(flags)
         else:
             return -ENOSUP
-    def rename(self,nodenew,parentold,parentnew):
-        return self.basenode.rename(nodenew,parentold,parentnew)
+    def rename(self,nodenew):
+        if nodenew.exists():
+            return -EEXISTS
+        nodenew.link(self.basenode.rawpath())
+        self.basenode.unlink()
+        return 0
     def rmdir(self,parent):
         return -ENOSUP
     def setMeta(self,rwcap,rocap,cryptokey):
