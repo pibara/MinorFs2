@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import hashlib
+import hmac
 import base64
 
 class RoKey:
@@ -7,17 +8,22 @@ class RoKey:
         self.key=key
         self.core=core
         self.lkey=None
-    def getRwKey():
+    def getRwKey(self):
         return None
-    def getRoKey():
+    def getCryptoKey(self):
         return self.key
-    def getLocationKey():
+    def getRoKey(self):
+        return base64.b32encode(self.getCryptoKey())[:52]
+    def __getRawLocationKey(self):
         if self.lkey == None:
             self.lkey = self.core.ro2loc(self.key)
         return self.lkey 
-    def getSubNodeRwKey(name):
+    def getLocationKey(self):
+        k = base64.b32encode(self.__getRawLocationKey())[:52]
+        return "/"+k[:2]+"/"+k[2:4]+"/"+k[4:]
+    def getSubNodeRwKey(self,name):
         return None
-    def getSubNodeRoKey(name):
+    def getSubNodeRoKey(self,name):
         return RoKey(self.core.rw2ro(self.core.ro2subrw(self.key,name)),self.core)
 
 class RwKey:
@@ -26,33 +32,39 @@ class RwKey:
         self.core=core
         self.rokey=None
         self.lkey=None
-    def getRwKey():
-        return self.key
-    def getRoKey():
+    def getRwKey(self):
+        return base64.b32encode(self.key)[:52]
+    def getCryptoKey(self):
         if self.rokey==None:
-            self.rokey=self.core.rw2ro(self.key)
+            self.rokey=self.core._rw2ro(self.key)
         return self.rokey
-    def getLocationKey():
+    def getRoKey(self):
+        return base64.b32encode(self.getCryptoKey())[:52]
+    def __getRawLocationKey(self):
         if self.lkey == None:
-            self.lkey = self.core.ro2loc(self.getRoKey())
+            self.lkey = self.core._ro2loc(self.getRoKey())
         return self.lkey
-    def getSubNodeRwKey(name):
-        return RwKey(self.core.ro2subrw(self.getRoKey(),name),self.core)
-    def getSubNodeRoKey(name):
-        return RoKey(self.core.rw2ro(self.core.ro2subrw(self.getRoKey()),name),self.core)
+    def getLocationKey(self):
+        k = base64.b32encode(self.__getRawLocationKey())[:52]
+        return "/"+k[:2]+"/"+k[2:4]+"/"+k[4:]
+    def getSubNodeRwKey(self,name):
+        return RwKey(self.core._ro2subrw(self.getRoKey(),name),self.core)
+    def getSubNodeRoKey(self,name):
+        return RoKey(self.core._rw2ro(self.core.ro2subrw(self.getRoKey()),name),self.core)
 
-class RoCore:
+class CapCore:
     def __init__(self,secretsalt):
         self._secretsalt=secretsalt
-    def rw2ro(self,rwkey):
-        pass
-    def ro2loc(self,rokey):
-        pass
-    def ro2subrw(self,rokey,name):
-        pass
+    def _rw2ro(self,rwkey):
+        return hmac.new(rwkey,'#readonly', hashlib.sha256).digest()
+    def _ro2loc(self,rokey):
+        return hmac.new(rokey,'#location', hashlib.sha256).digest()
+    def _ro2subrw(self,rokey,name):
+        return hmac.new(rokey,name + self._secretsalt,hashlib.sha256).digest()
     def getCap(self,romode,key):
         if romode:
             return RoKey(key,self)
         else:
             return RwKey(key,self)
+
 
