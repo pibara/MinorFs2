@@ -29,13 +29,13 @@ class _Key:
         return "/"+k[:2]+"/"+k[2:4]+"/"+k[4:]
     def getSubNodeKey(self,name):
         if self.rwkey:
-            return _Key(self.core._rw2ro(self.core._ro2subrw(self.rwkey,name)),None,self.core)
+            return _Key(self.core._ro2subrw(self.getRawCryptoKey(),name),None,self.core)
         else:
             return _Key(None,self.core._rw2ro(self.core._ro2subrw(self.getRawCryptoKey(),name)),self.core)
     def getRoKey(self):
         if self.rwkey==None:
             return self
-        return _Key(0,self.getRawCryptoKey,self.core)
+        return _Key(0,self.getRawCryptoKey(),self.core)
     def isReadOnly(self):
         if self.rwkey==None:
             return True
@@ -75,12 +75,13 @@ class Core:
 if __name__ == "__main__":
     core=Core("0c8b608f87be8dfa6ec8fad6d7d9252e90a1a081eeb88595cd7bc279d891a057")
     baserwkey=core.newRandomKey()
+    print "Testing if ro->sub == sub->r:"
     rwsubnode=baserwkey.getSubNodeKey("foo")
+    cap1=rwsubnode.getRoCap()
     robasekey=baserwkey.getRoKey()
     rosubkey=robasekey.getSubNodeKey("foo")
-    cap1=rwsubnode.getRoCap()
     cap2=rosubkey.getRoCap()
     if (cap1 != None) and (cap1 == cap2):
-        print "OK"
+        print "   OK"
     else:
-        print "BROKEN: ",cap1,"!=",cap2
+        print "   BROKEN: ",cap1,"!=",cap2
