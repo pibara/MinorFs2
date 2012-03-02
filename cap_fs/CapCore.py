@@ -1,8 +1,10 @@
 #!/usr/bin/python
+#Hmm, these imports polute the mudule namespace, how does this work in python?
 import hashlib
 import hmac
 import base64
 import random
+
 class _Key:
     def __init__(self,rwkey,rokey,core):
         self.rwkey=rwkey
@@ -57,7 +59,11 @@ class Core:
         else:
             return _Key(key,None,self)
     def _getCap(self,romode,asciikey):
-        return None #FIXME
+        try:
+            rawkey=base64.b32decode(asciikey + "====")
+        except TypeError:
+            return None
+        return self._getCapRaw(romode,rawkey)
     def getCap(self,asciicap):
         if len(asciicap) != 55:
             return None
@@ -85,3 +91,24 @@ if __name__ == "__main__":
         print "   OK"
     else:
         print "   BROKEN: ",cap1,"!=",cap2
+    print "Testing reconstruction of read only key from ascii cap:"
+    reconstructedkey1=core.getCap(cap1)
+    cap3=reconstructedkey1.getRoCap()
+    if (cap1 != None) and (cap1 == cap3):
+        print "   OK"
+    else:
+        print "   BROKEN: ",cap1,"!=",cap3
+    print "Testing reconstruction of read-write key from ascii cap:"
+    cap4=baserwkey.getRwCap()
+    reconstructedkey2=core.getCap(cap4)
+    cap5=reconstructedkey2.getRwCap()
+    if (cap4 != None) and (cap4 == cap5):
+        print "   OK"
+    else:
+        print "   BROKEN: ",cap4,"!=",cap5
+    print "Testing if read only keys are deeply read only:"
+    cap6=rosubkey.getRwCap()
+    if cap6 == None:
+        print "   OK"
+    else:
+        print "   BROKEN"
