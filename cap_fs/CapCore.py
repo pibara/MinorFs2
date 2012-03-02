@@ -131,6 +131,7 @@ Make sure that the salt used is:
 if __name__ == "__main__":
     core=Core("0c8b608f87be8dfa6ec8fad6d7d9252e90a1a081eeb88595cd7bc279d891a057")
     baserwkey=core.newRandomKey()
+    print "Using randomly generated rw key:", baserwkey.getRwCap()
     print "Testing if ro->sub == sub->r:"
     rwsubnode=baserwkey.getSubNodeKey("foo")
     cap1=rwsubnode.getRoCap()
