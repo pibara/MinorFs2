@@ -102,6 +102,28 @@ Make sure that the salt used is:
         if asciicaptype == "ro":
             return self._getKey(True,asciicap[3:])
         return None
+    def lookup(self,relpath):
+        """This method takes a full capfs path (not being /) and finds the key for the designated node and if possible its direct parent."""
+        while relpath[0] == "/":
+            relpath=relpath[1:]
+        nodenames=relpath.split("/")
+        nodenames.reverse()
+        if len(nodenames) <1:
+            return [None,None]
+        topkey=self.getKey(nodenames.pop())
+        if topkey == None:
+            return [None,None]
+        if len(nodenames) <1:
+            return [topkey,None]
+        parent=topkey
+        while len(nodenames) > 0:
+            childname=nodenames.pop()
+            child=parent.getSubNodeKey(childname)
+            if child == None:
+                return [None,None]
+            if len(nodenames) > 0:
+                parent=child
+        return [child,parent]
     def newRandomKey(self):
         """This method should be used sparsinly. It generates a new top-level node for cap-fs"""
         return _Key(hashlib.sha256(str(random.SystemRandom().getrandbits(256))).digest(),None,self)
@@ -116,14 +138,14 @@ if __name__ == "__main__":
     rosubkey=robasekey.getSubNodeKey("foo")
     cap2=rosubkey.getRoCap()
     if (cap1 != None) and (cap1 == cap2):
-        print "   OK"
+        print "   OK:  ", cap1
     else:
         print "   BROKEN: ",cap1,"!=",cap2
     print "Testing reconstruction of read only key from ascii cap:"
     reconstructedkey1=core.getKey(cap1)
     cap3=reconstructedkey1.getRoCap()
     if (cap1 != None) and (cap1 == cap3):
-        print "   OK"
+        print "   OK:  ", cap1
     else:
         print "   BROKEN: ",cap1,"!=",cap3
     print "Testing reconstruction of read-write key from ascii cap:"
@@ -131,12 +153,22 @@ if __name__ == "__main__":
     reconstructedkey2=core.getKey(cap4)
     cap5=reconstructedkey2.getRwCap()
     if (cap4 != None) and (cap4 == cap5):
-        print "   OK"
+        print "   OK:  ", cap4
     else:
         print "   BROKEN: ",cap4,"!=",cap5
     print "Testing if read only keys are deeply read only:"
     cap6=rosubkey.getRwCap()
     if cap6 == None:
+        print "   OK : None"
+    else:
+        print "   BROKEN: ",cap6, "Should be None"
+    print "Testing full path"
+    fullpath="/" + cap5 + "/aap/noot/mies"
+    print "   full-path: ",fullpath
+    a=core.lookup(fullpath);
+    if len(a)==2 and a[0]!=None and a[1]!=None:
+        print "    child : location=", a[0].getLocation()
+        print "    parent: location=", a[1].getLocation() 
         print "   OK"
     else:
         print "   BROKEN"
