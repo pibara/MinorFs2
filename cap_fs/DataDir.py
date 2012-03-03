@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import os
+import NullCrypto
 class _Node:
     def __init__(self,fullpath,crypto):
         self.__fullpath=fullpath
@@ -64,11 +65,23 @@ class _Node:
                 os.mkdir(l2dir,0700)
         return os.open(self.__fullpath,flags,filemode)
     def open(self,flags,mode):
-        return self.__crypto.fileProxy(self.__open(flags,mode,4))
-    def openRawDirFile(flags,mode): #Not sure if this is the right abstraction here.
-        return self.__crypto.fileProxy(self.__open(flags,mode,6))
-    def openRawLinkFile(flags,mode): #Not sure if this is the right abstraction here.
-        return self.__crypto.fileProxy(self.__open(flags,mode,7))
+        return self.__crypto.fileProxy(self.__open(flags,mode,4),mode)
+    def getJson(self):
+        readfile=self.__crypto.fileProxy(self.__open(os.O_RDONLY,0700,nodetype),"r")
+        jsondata=readfile.readall()
+        readfile.close()
+        return readfile.close()
+    def __putJson(self,jsonstring,nodetype):
+        writefile=self.__crypto.fileProxy(self.__open(os.O_CREAT|os.O_WRONLY,0700,nodetype),"w")
+        writefile.write(jsonstring)
+        writefile.close    
+        return
+    def putJsonDir(self,jsonstring):
+        self.__putJson(jsonstring,6)
+        return
+    def putJsonLink(self,jsonstring):
+        self.__putJson(jsonstring,7)
+        return
 
 class Repository:
     def __init__(self,basedir,cryptomodule):
@@ -79,3 +92,15 @@ class Repository:
     def getNode(self,relpath,cryptokey):
         return _Node(self.basedir + "/" + relpath,self.cryptomodule.Crypto(cryptokey))
            
+if __name__ == "__main__":
+    nullcrypto = NullCrypto.Module()
+    os.mkdir("./test")
+    rep = Repository("./test",nullcrypto)
+    dirnode  = rep.getNode("/AB/CD/L22DPVG6T4KUQ3IFJPTUEG42SWOUCBGEUJGCSMTBRFYPMY6A",None)
+    dirnode.putJsonDir('{ "content" : ["foo"] }')
+    filenode = rep.getNode("/EF/GH/L22DPVG6T4KUQ3IFJPTUEG42SWOUCBGEUJGCSMTBRFYPMY6A",None)
+    fh=filenode.open(os.O_CREAT|os.O_WRONLY,0644)
+    fh.write("just testing")
+    fh.close()
+    linknode = rep.getNode("/AB/GH/L22DPVG6T4KUQ3IFJPTUEG42SWOUCBGEUJGCSMTBRFYPMY6A",None)
+    linknode.putJsonLink('{ "link" : "/home/rob/test" }')
