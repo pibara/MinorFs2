@@ -73,7 +73,7 @@ class _Node:
         return readfile.close()
     def __putJson(self,jsonstring,nodetype):
         writefile=self.__crypto.fileProxy(self.__open(os.O_CREAT|os.O_WRONLY,0700,nodetype),"w")
-        writefile.write(jsonstring)
+        writefile.write(jsonstring,0)
         writefile.close    
         return
     def putJsonDir(self,jsonstring):
@@ -100,7 +100,7 @@ if __name__ == "__main__":
     dirnode.putJsonDir('{ "content" : ["foo"] }')
     filenode = rep.getNode("/EF/GH/L22DPVG6T4KUQ3IFJPTUEG42SWOUCBGEUJGCSMTBRFYPMY6A",None)
     fh=filenode.open(os.O_CREAT|os.O_WRONLY,0644)
-    fh.write("just testing")
+    fh.write("just testing",0)
     fh.close()
     linknode = rep.getNode("/AB/GH/L22DPVG6T4KUQ3IFJPTUEG42SWOUCBGEUJGCSMTBRFYPMY6A",None)
     linknode.putJsonLink('{ "link" : "/home/rob/test" }')
