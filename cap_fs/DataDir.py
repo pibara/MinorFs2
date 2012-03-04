@@ -1,6 +1,5 @@
 #!/usr/bin/python
 import os
-import NullCrypto
 class _Node:
     def __init__(self,fullpath,crypto):
         self.__fullpath=fullpath
@@ -93,14 +92,27 @@ class Repository:
         return _Node(self.basedir + "/" + relpath,self.cryptomodule.Crypto(cryptokey))
            
 if __name__ == "__main__":
-    nullcrypto = NullCrypto.Module()
-    os.mkdir("./test")
-    rep = Repository("./test",nullcrypto)
-    dirnode  = rep.getNode("/AB/CD/L22DPVG6T4KUQ3IFJPTUEG42SWOUCBGEUJGCSMTBRFYPMY6A",None)
+    from XorCrypto import CryptoModule
+    cryptomodule = CryptoModule()
+    if not os.path.exists("./test"):
+        os.mkdir("./test")
+    rep = Repository("./test",cryptomodule)
+    dirnode  = rep.getNode("/AB/CD/L22DPVG6T4KUQ3IFJPTUEG42SWOUCBGEUJGCSMTBRFYPMY6A","fakekey1fakekey1fakekey1fakekey1")
     dirnode.putJsonDir('{ "content" : ["foo"] }')
-    filenode = rep.getNode("/EF/GH/L22DPVG6T4KUQ3IFJPTUEG42SWOUCBGEUJGCSMTBRFYPMY6A",None)
+    filenode = rep.getNode("/EF/GH/L22DPVG6T4KUQ3IFJPTUEG42SWOUCBGEUJGCSMTBRFYPMY6A","fakekey2fakekey2fakekey2fakekey2")
     fh=filenode.open(os.O_CREAT|os.O_WRONLY,0644)
     fh.write("just testing",0)
     fh.close()
-    linknode = rep.getNode("/AB/GH/L22DPVG6T4KUQ3IFJPTUEG42SWOUCBGEUJGCSMTBRFYPMY6A",None)
+    filenode2 = rep.getNode("/EF/GH/M22DPVG6T4KUQ3IFJPTUEG42SWOUCBGEUJGCSMTBRFYPMY6B","fakekey3fakekey3fakekey3fakekey3")
+    fh=filenode2.open(os.O_CREAT|os.O_WRONLY,0755)
+    fh.write("One more test.\n",0)
+    fh.write("""Now lets test with a larger chunk of data. 
+We start this data at an unaligned offset so we test the crypto module used also.
+""",15)
+    fh.close()
+    filenode2 = rep.getNode("/EF/GH/M22DPVG6T4KUQ3IFJPTUEG42SWOUCBGEUJGCSMTBRFYPMY6B","fakekey3fakekey3fakekey3fakekey3")
+    fh=filenode2.open(os.O_RDONLY,0700)
+    print fh.read(1000,0)
+    fh.close()
+    linknode = rep.getNode("/AB/GH/L22DPVG6T4KUQ3IFJPTUEG42SWOUCBGEUJGCSMTBRFYPMY6A","fakekey4fakekey4fakekey4fakekey4")
     linknode.putJsonLink('{ "link" : "/home/rob/test" }')

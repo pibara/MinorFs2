@@ -9,12 +9,12 @@ class NullFhProxy:
         if self.closed==False:
             os.close(self.fh)
     def read(self,n,offset):
-        os.lseek(self.fd,offset,os.SEEK_SET) #FIXME: check
+        os.lseek(self.fh,offset,os.SEEK_SET)
         return os.read(self.fh,n)
     def readall(self):
-        return self.read(100000000,0) #This method is meant for link and dir json stuff, a dir should not exceed 100MB of json probably.
+        return self.read(100000000,0)
     def write(self,string,offset):
-        os.lseek(self.fd,offset,os.SEEK_SET) #FIXME: check
+        os.lseek(self.fh,offset,os.SEEK_SET)
         return os.write(self.fh,string)
     def close(self):
         if self.closed==False:
@@ -26,6 +26,10 @@ class NullCrypto:
     def fileProxy(self,fh,mode):
         return NullFhProxy(fh)
 
-class Module:
+class CryptoModule:
+    """This is an alternative NULL crypto module for the MinorFs CapFs file-system.
+It doesn't do any crypto but it should be faster than the default weak XOR crypto module.
+"""
     def Crypto(self,key):
+        "This method returns a new NULL crypto module for a node. The file encryption key is simply ignored."
         return NullCrypto()
