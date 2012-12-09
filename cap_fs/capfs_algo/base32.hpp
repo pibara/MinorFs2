@@ -3,10 +3,10 @@
 #include <string>
 
 template <int Len>
-std::string b32encode(unsigned char *binary);
+std::string b32encode(const unsigned char *binary);
 
 template <>
-std::string b32encode<5>(unsigned char *binary) {
+std::string b32encode<5>(const unsigned char *binary) {
    char target[9];
    target[0]=(binary[0] >> 3) & 0x01f;
    target[1]=((binary[0] << 2) & 0x01c) | ((binary[1] >> 6) & 0x007);
@@ -24,7 +24,7 @@ std::string b32encode<5>(unsigned char *binary) {
 }
 
 template <>
-std::string b32encode<30>(unsigned char *binary) {
+std::string b32encode<30>(const unsigned char *binary) {
    return b32encode<5>(binary) +
           b32encode<5>(binary+5) +
           b32encode<5>(binary+10) +
@@ -34,7 +34,7 @@ std::string b32encode<30>(unsigned char *binary) {
 }
 
 template <>
-std::string b32encode<32>(unsigned char *binary) {
+std::string b32encode<32>(const unsigned char *binary) {
     unsigned char padded[5];
     padded[0]=binary[30];
     padded[1]=binary[31];
