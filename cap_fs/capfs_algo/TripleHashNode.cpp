@@ -21,35 +21,71 @@
 //FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
 //ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //DEALINGS IN THE SOFTWARE.
+#include <iostream>
 #include <TripleHashNode.hpp>
 #include <base32.hpp>
 #include <openssl/engine.h>
 #include <openssl/hmac.h>
 #include <openssl/evp.h>
+#include <string.h>
 
 namespace capfs {
 //The public constructor.
 TripleHashNode::TripleHashNode(std::string secretsalt,std::string b32cap):
     mSalt(secretsalt),
+    mVKey1(false),
+    mVKey2(false),
     mVKey3(false) { //We are lazy about calculating Key3
-  mVKey1=(b32cap.substr(0,3)=="rw-");
-  if (mVKey1) {
-     b32decode<52>(b32cap.substr(3,52),mKey1);
-     derivekey(mKey1,"read-only","nosalt",mKey2); //We imediately calculate Key2.
-  } else {
-     b32decode<52>(b32cap.substr(3,52),mKey2);
-  }  
+  char const * cstr=b32cap.c_str();
+  bool validcap=(b32cap.size() == 55 ) && 
+                (cstr[0] == 'r') &&
+                ((cstr[1] == 'o') || (cstr[1] == 'w')) &&
+                (cstr[2] == '-');
+  for (size_t index=3;index<55;index++) {
+     if ((cstr[index] < '2') ||
+         (cstr[index] > 'Z') ||
+         ((cstr[index] > '7') && (cstr[index] < 'A'))) {
+        validcap=false;
+     }
+  }
+  if (validcap) {
+    mVKey1=(cstr[1] == 'w');
+    mVKey2=validcap;
+    if (mVKey1) {
+       b32decode<52>(b32cap.substr(3,52),mKey1);
+       derivekey(mKey1,"read-only","nosalt",mKey2); //We imediately calculate Key2.
+    } else {
+       b32decode<52>(b32cap.substr(3,52),mKey2);
+    }  
+  }
 }
 //The private constructo used by operator[] to derive a child node.
 TripleHashNode::TripleHashNode(std::string nodename,TripleHashNode const *parent):
     mSalt(parent->mSalt),
     mVKey1(parent->mVKey1), //If the parent has marked Key1 as invalid, so will we to prevent 
                             //privilege escalation.
+    mVKey2(parent->mVKey2),
     mVKey3(false){ //We are lazy about calculating Key3
   derivekey(parent->mKey2,nodename,mSalt,mKey1); //We calculate Key1. This does not change the fact 
                                                  //that the valid Key1 may be marked invalid.
   derivekey(mKey1,"read-only","nosalt",mKey2); //We imediately calculate Key2.
 }
+TripleHashNode::TripleHashNode():
+    mSalt(""),
+    mVKey1(false),
+    mVKey2(false),
+    mVKey3(false) {}
+
+TripleHashNode::~TripleHashNode() {
+   size_t index;
+   //We shouldn't leave sensitive key material laying around on the stack or heap, so lets null out our key material.
+   for (index=0;index<32;index++) {
+     mKey1[index]=0;
+     mKey2[index]=0;
+     mKey3[index]=0;      
+   }
+}
+
 void TripleHashNode::derivekey(unsigned char const *inkey,std::string instring,std::string salt,
                                unsigned char *outkey) const {
   unsigned int out_len=32;
@@ -58,7 +94,7 @@ void TripleHashNode::derivekey(unsigned char const *inkey,std::string instring,s
 }
 
 std::string TripleHashNode::treepath(std::string bs) const{
-  return std::string("/") + bs.substr(0,2) + "/" + bs.substr(2,2) + "/" + bs.substr(4,48);
+  return mVKey2 ? std::string("/") + bs.substr(0,2) + "/" + bs.substr(2,2) + "/" + bs.substr(4,48) : "";
 }
 
 bool TripleHashNode::canWrite() const{
@@ -68,12 +104,15 @@ std::string TripleHashNode::rwcap() const {
   return mVKey1 ? std::string("rw-") + b32encode<32>(mKey1) : "" ;
 }
 std::string TripleHashNode::rocap() const {
-  return std::string("ro-") + b32encode<32>(mKey2);
+  return mVKey2 ? std::string("ro-") + b32encode<32>(mKey2): "";
 }
 unsigned char const * TripleHashNode::cryptokey() const {
-  return mKey2;
+  return mVKey2 ? mKey2: NULL;
 }
 std::string TripleHashNode::rawpath() const {
+  if (mVKey2 == false) {
+     return "";
+  }
   if (mVKey3 == false) {
       derivekey(mKey2,"storage","nosalt",mKey3);
   }

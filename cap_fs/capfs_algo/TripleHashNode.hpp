@@ -27,17 +27,20 @@
 namespace capfs {
 class TripleHashNode;
 class TripleHashNode {
-     unsigned char mKey1[35];
-     unsigned char mKey2[35];     
-     mutable unsigned char mKey3[35];
+     unsigned char mKey1[32];
+     unsigned char mKey2[32];     
+     mutable unsigned char mKey3[32];
      std::string mSalt;
      bool mVKey1;
+     bool mVKey2;
      bool mVKey3;
      TripleHashNode(std::string nodename,TripleHashNode const * parent);
      void derivekey(unsigned char const *inkey,std::string instring,std::string salt,unsigned char *) const;
      std::string treepath(std::string) const;
    public:
      TripleHashNode(std::string secretsalt,std::string b32cap);
+     TripleHashNode();
+     ~TripleHashNode();
      bool canWrite() const;
      std::string rwcap() const;
      std::string rocap() const;
