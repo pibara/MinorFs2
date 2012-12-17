@@ -262,7 +262,7 @@ int main(int argc, char *argv[])
   capfs_oper.removexattr = capfs_removexattr,
   capfs_oper.flag_nullpath_ok = 0;
   fuseargv[0]=argv[0];
-  if (argv[1][0] == '-') {
+  if ((argc > 1) && (argv[1][0] == '-')) {
       fuseargv[1]=argv[1];
       fuseargcount=2;
   }

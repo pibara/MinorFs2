@@ -28,18 +28,18 @@
 #include <fuse.h>
 class OpenBaseNode {
   public:
-    int release();
-    int releasedir();
-    int read(char *b, size_t s, off_t o);
-    int write(const char *b, size_t s, off_t o);
-    int flush();
-    int fsync(int isdatasync);
-    int readdir(void *buf, fuse_fill_dir_t filler, off_t offset);
-    int fsyncdir(int isdatasync);
-    int ftruncate(off_t l);
-    int fstat(struct stat *s);
-    int lock(int cmd, struct flock *fl);
-    int ioctl(int cmd, void *arg, unsigned int flags, void *data);
-    int poll(fuse_pollhandle *ph, unsigned *reventsp);
+    int release(){ return -EPERM;}
+    int releasedir(){ return -EPERM;}
+    int read(char *b, size_t s, off_t o){ return -EPERM;}
+    int write(const char *b, size_t s, off_t o){ return -EPERM;}
+    int flush(){ return -EPERM;}
+    int fsync(int isdatasync){ return -EPERM;}
+    int readdir(void *buf, fuse_fill_dir_t filler, off_t offset){ return -EPERM;}
+    int fsyncdir(int isdatasync){ return -EPERM;}
+    int ftruncate(off_t l){ return -EPERM;}
+    int fstat(struct stat *s){ return -EPERM;}
+    int lock(int cmd, struct flock *fl){ return -EPERM;}
+    int ioctl(int cmd, void *arg, unsigned int flags, void *data){ return -EPERM;}
+    int poll(fuse_pollhandle *ph, unsigned *reventsp){ return -EPERM;}
 };
 #endif
