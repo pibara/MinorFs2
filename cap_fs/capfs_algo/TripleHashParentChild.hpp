@@ -21,32 +21,18 @@
 //FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
 //ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //DEALINGS IN THE SOFTWARE.
-#ifndef MINORFS_CAPFS_TRIPLEHASHNODE_HPP
-#define MINORFS_CAPFS_TRIPLEHASHNODE_HPP
+#ifndef MINORFS_CAPFS_TRIPLEHASHPARENTCHILD_HPP
+#define MINORFS_CAPFS_TRIPLEHASHPARENTCHILD_HPP
 #include <string>
+#include <TripleHashNode.hpp>
 namespace capfs {
-class TripleHashNode;
-class TripleHashNode {
-     unsigned char mKey1[32];
-     unsigned char mKey2[32];     
-     mutable unsigned char mKey3[32];
-     std::string mSalt;
-     bool mVKey1;
-     bool mVKey2;
-     bool mVKey3;
-     TripleHashNode(std::string nodename,TripleHashNode const * parent);
-     void derivekey(unsigned char const *inkey,std::string instring,std::string salt,unsigned char *) const;
-     std::string treepath(std::string) const;
+class TripleHashParentChild {
+       TripleHashNode mParent;
+       TripleHashNode mChild;
    public:
-     TripleHashNode(std::string secretsalt,std::string b32cap);
-     TripleHashNode();
-     ~TripleHashNode();
-     bool canWrite() const;
-     std::string rwcap() const;
-     std::string rocap() const;
-     unsigned char const * cryptokey() const;
-     std::string rawpath() const;
-     TripleHashNode operator[](std::string childnodename) const;
-};
+       TripleHashParentChild(std::string salt,std::string path);
+       TripleHashNode child() const;
+       TripleHashNode parent() const;
+}; 
 }
 #endif

@@ -1,3 +1,0 @@
-Version 2 of MinorFs is currently in its design phase. The MinorFs2 project aims to make the concepts introduced with the proof-of-concept MinorFs project into a somewhat less pure but more practical implementation. MinorFs2 will be written from scratch in Python without re-use of the old MinorFs perl code. 
-
-There is no code here yet, Please check back later. 

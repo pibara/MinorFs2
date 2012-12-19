@@ -21,32 +21,27 @@
 //FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
 //ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //DEALINGS IN THE SOFTWARE.
-#ifndef MINORFS_CAPFS_TRIPLEHASHNODE_HPP
-#define MINORFS_CAPFS_TRIPLEHASHNODE_HPP
+#include <iostream>
 #include <string>
-namespace capfs {
-class TripleHashNode;
-class TripleHashNode {
-     unsigned char mKey1[32];
-     unsigned char mKey2[32];     
-     mutable unsigned char mKey3[32];
-     std::string mSalt;
-     bool mVKey1;
-     bool mVKey2;
-     bool mVKey3;
-     TripleHashNode(std::string nodename,TripleHashNode const * parent);
-     void derivekey(unsigned char const *inkey,std::string instring,std::string salt,unsigned char *) const;
-     std::string treepath(std::string) const;
-   public:
-     TripleHashNode(std::string secretsalt,std::string b32cap);
-     TripleHashNode();
-     ~TripleHashNode();
-     bool canWrite() const;
-     std::string rwcap() const;
-     std::string rocap() const;
-     unsigned char const * cryptokey() const;
-     std::string rawpath() const;
-     TripleHashNode operator[](std::string childnodename) const;
-};
+#include <TripleHashLookup.hpp>
+
+void printkey(capfs::TripleHashNode const &node,std::string name) {
+  std::cerr << name << ":" << std::endl;
+  std::cout << "\trw=" << node.rwcap() << std::endl;
+  std::cout << "\tro=" << node.rocap() << std::endl;
+  std::cout << "\tsp=" << node.rawpath() << std::endl;
+} 
+
+void printparentchild(capfs::TripleHashParentChild const pc,std::string name) {
+  printkey(pc.parent(),name + "::parent");
+  printkey(pc.child(),name + "::child");
 }
-#endif
+
+int main(int argc,char **argv){
+  capfs::TripleHashLookup triplehash("ThisIsASPrettyBadSecretSalt");
+  printparentchild(triplehash["/rw-ABCDEFGHIJKLMNOPQRSTUVWXYZ234567ABCDEFGHIJKLMNOPQRST/Foo/Bar/Bla.txt"],"l4"); 
+  printparentchild(triplehash["/rw-ABCDEFGHIJKLMNOPQRSTUVWXYZ234567ABCDEFGHIJKLMNOPQRST/Foo"],"l2");
+  printparentchild(triplehash["/rw-ABCDEFGHIJKLMNOPQRSTUVWXYZ234567ABCDEFGHIJKLMNOPQRST"],"l1");
+  printparentchild(triplehash["/"],"l0");
+  printparentchild(triplehash["/bogus"],"bogus"); 
+}
