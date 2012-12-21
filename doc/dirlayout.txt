@@ -1,0 +1,14 @@
+
+/etc/minorfs/         : This directory will contain configuration files for 
+                        individual minorfs subsystems. 
+/etc/minorfs.d/       : This directory contains per executable config files for
+                        homefs or tmpfs. 
+/var/minorfs/data     : The default place for CapFs to use for data storage.
+/minormnt/            : Basically this is the /mnt/ for all MinorFs filesystem.
+  /minorfs/ac/        : Mountpoint for CapFs its access controll helper filesystem.
+  /minorfs/cap/       : Mountpoint for the low-level sparse-capability based file-system
+                        that forms the foundation oif MinorFs.
+  /minorfs/pid/       : Mountpoint for GranFs its process identity lookup helper filesystem.
+  /minorfs/gran/      : Mountpoint for the multi granularity home file-system.
+  /minorfs/home/      : Mountpoint for the configurable home file-system.
+  /minorfs/tmp/       : The TmpFs filesystem mountpoint.
