@@ -1,0 +1,51 @@
+HomeFs will support the following granularities:
+
+* user                  : Files and directories at this level are shared with all
+                          processes that run under the same uid.
+* toolset               : Files and directories at this level are shared with all
+                          processes that run under the same uid and that are instances
+                          of executables that are defined to be part of the same
+                          named toolset.
+* exe/base              : Files and directories at this level are shared with all
+                          processes that run under the same uid and that are instances
+                          of the same executable.
+* exe/callchain         : Files and directories at this level are shared with all
+                          processes that run under the same uid and that are instances
+                          of the same executable that have a parent process that are an 
+                          instance of executables that are the same up to the init
+                          process.
+* exe/ppid              : Files and directories at this level are shared with all
+                          processes that run under the same uid and that are instances
+                          of the same executable loaded with exactly the same libraries
+                          that have a parent process that are an instance of executables 
+                          loaded with libraries that are the same up to the init process,
+                          and also share the same slot id, so only a single process at a time 
+                          has the same pseudo persistent process id.
+* script/base           : Like exe/base but for scripts and/or VM interpreted binaries.
+* script/callchain      : Like exe/callchain but for scripts and/or VM interpreted binaries.
+* script/ppid           : Like exe/ppid but for scripts and/or VM interpreted binaries.
+* cmdline/base          : Like exe/base but also with the exact same commandline info.
+* cmdline/callchain     : Like exe/base but also with the exact same commandline info all the
+                          way upto init. 
+* cmdline/ppid          : Like exe/ppid, but including the same commandline all the way upto 
+                          init.
+
+
+By default all top level non dot entries in HomeFs will map to 'user' granularity while top level dot 
+entries will map to 'exe/base' granularity. Both can be reconfigured on a per executable basis.
+AppArmor can be used to grant or deny access to individual granularity levels. 
+
+Note: I'm currently contemplating dropping all the */ppid dranularity levels from MinorFs2.
+      */ppid would basically provide protection for persistent processes created in ocap languages
+      with support for persistence. The AppArmor/MinorFs/E-language stach has aparently not sparked
+      any interest that I'm aware of. I'll keep an eye on v8-ken (https://github.com/supergillis/v8-ken/) 
+      development during MinorFs2 development to see if it makes sense to keep */ppid granularity in.
+      
+
+
+TmpFs will support the following granularity:
+
+* pid
+
+Note that TmpFs can be configured for an executable to map to any directory including any of the 
+HomeFs directories for any given granularity. TmpFs itself however knows only one granularity. 
