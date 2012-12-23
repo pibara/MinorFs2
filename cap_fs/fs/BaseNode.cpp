@@ -21,38 +21,40 @@
 //FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
 //ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //DEALINGS IN THE SOFTWARE.
-#ifndef MINORFS_CAPFS_BASENODE_HPP
-#define MINORFS_CAPFS_BASENODE_HPP
-#include <string>
-#include <inttypes.h>
-#define FUSE_USE_VERSION 26
-#include <fuse.h>
-#include <sys/stat.h>
-#include <errno.h>
-class BaseNode;
-class BaseNode {
-    bool mAccess;
+#include <BaseNode.hpp>
+#include <string.h>
+
+bool mAccess;
     std::string mRelPath;
-  public:
-    BaseNode();
-    BaseNode(std::string relpath);
-    int stat(struct stat *s);
-    int readlink(char *b, size_t l);
-    int mknod(mode_t m, dev_t d); 
-    int mkdir(mode_t m); 
-    int unlink(); 
-    int rmdir();
-    int symlink(std::string l); 
-    int rename(BaseNode l); 
-    int link(BaseNode l); 
-    int chmod(mode_t m); 
-    int truncate(off_t off); 
-    int getxattr(const char *n, char *v, size_t s);  
-    int listxattr(char *l, size_t s);
-    int access(int m);
-    int bmap(size_t blocksize, uint64_t *idx);
-    int open(uint64_t *fh,int flags);
-    int opendir(uint64_t *fh);
-    int create(uint64_t *fh,mode_t m);
-};
-#endif
+
+BaseNode::BaseNode():mAccess(false),mRelPath(""){}
+BaseNode::BaseNode(std::string relpath):mAccess(true),mRelPath(relpath){}
+int BaseNode::stat(struct stat *s) { 
+  if (mAccess == false) {
+    return -EPERM;
+  }
+  memset(s, 0, sizeof(struct stat));
+  if (mRelPath == "/") {
+     s->st_mode = S_IFDIR | 0755;
+     s->st_nlink = 3; 
+     return 0;
+  }
+  return -ENOENT;  
+}
+int BaseNode::readlink(char *b, size_t l) { return -EPERM;}
+int BaseNode::mknod(mode_t m, dev_t d) { return -EPERM;}
+int BaseNode::mkdir(mode_t m) { return -EPERM;}
+int BaseNode::unlink() { return -EPERM;}
+int BaseNode::rmdir() { return -EPERM;}
+int BaseNode::symlink(std::string l) {return -EPERM;}
+int BaseNode::rename(BaseNode l) {return -EPERM;}
+int BaseNode::link(BaseNode l) {return -EPERM;}
+int BaseNode::chmod(mode_t m) {return -EPERM;}
+int BaseNode::truncate(off_t off) {return -EPERM;}
+int BaseNode::getxattr(const char *n, char *v, size_t s)  {return -EPERM;}
+int BaseNode::listxattr(char *l, size_t s) {return -EPERM;}
+int BaseNode::access(int m) {return -EPERM;}
+int BaseNode::bmap(size_t blocksize, uint64_t *idx) {return -EPERM;}
+int BaseNode::open(uint64_t *fh,int flags) {return -EPERM;}
+int BaseNode::opendir(uint64_t *fh)  {return -EPERM;}
+int BaseNode::create(uint64_t *fh,mode_t m) {return -EPERM;}

@@ -24,6 +24,7 @@
 #ifndef MINORFS_CAPFS_GUARD_HPP
 #define MINORFS_CAPFS_GUARD_HPP
 #include <CapFs.hpp>
+#include <NoAccessFs.hpp>
 #include <AppArmorCheck.hpp>
 #include <sys/types.h>
 #include <grp.h>
@@ -32,23 +33,11 @@
 class CapFsGuard {
     gid_t mMinorFsGid;
     AppArmorCheck mAppArmorConfined;
-    CapFs mNoAccess;
-    CapFs mAccess;
-    static gid_t getgrnamgid() {
-      struct group *grp=getgrnam("minorfs");
-      if (grp) {
-         return grp->gr_gid;
-      }
-      return 0;
-    }
+    NoAccessFs mNoAccess;
+    CapFs  mAccess;
+    static gid_t getgrnamgid();
   public:
-    CapFsGuard():mMinorFsGid(getgrnamgid()),mNoAccess(false),mAccess(true){}
-    CapFs & operator()(gid_t gid,pid_t pid) {
-       if ((gid == mMinorFsGid) || mAppArmorConfined(pid)) {
-           return mAccess;
-       } else {
-           return mNoAccess;
-       }
-    }
+    CapFsGuard(std::string acpath);
+    BaseFs & operator()(gid_t gid,pid_t pid);
 };
 #endif

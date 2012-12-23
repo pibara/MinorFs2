@@ -28,6 +28,8 @@
 #include <fuse.h>
 class OpenBaseNode {
   public:
+    OpenBaseNode(){}
+    OpenBaseNode(uint64_t fh){}
     int release(){ return -EPERM;}
     int releasedir(){ return -EPERM;}
     int read(char *b, size_t s, off_t o){ return -EPERM;}

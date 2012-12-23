@@ -23,29 +23,15 @@
 //DEALINGS IN THE SOFTWARE.
 #ifndef MINORFS_CAPFS_APPARMORCHECK_HPP
 #define MINORFS_CAPFS_APPARMORCHECK_HPP
-#include <unistd.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <boost/lexical_cast.hpp>
 class AppArmorCheck {
-    bool mRunsAsRoot;
+    std::string mAcFsMountpoint;
+    struct stat mStat;
   public:
-    AppArmorCheck():mRunsAsRoot(geteuid() == 0){}
-    bool operator()(pid_t pid) {
-       if (mRunsAsRoot) { //FIXME, we need priviledge seperation so capfs won't have to run as root.
-          char c[1];
-          c[0]=0;
-          std::string currentpath=std::string("/proc/") + boost::lexical_cast<std::string>(pid) + "/attr/current";
-          int fd=open(currentpath.c_str(),O_RDONLY);
-          if (fd) {
-             if (read(fd,c,1)) {
-                if (c[0] == '/') {
-                   return true;
-                }
-             }
-          }          
-       } 
-       return false;
-    }
+    AppArmorCheck(std::string acfsmp);
+    bool operator()(pid_t pid);
 };
 #endif

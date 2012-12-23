@@ -21,38 +21,11 @@
 //FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
 //ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //DEALINGS IN THE SOFTWARE.
-#ifndef MINORFS_CAPFS_BASENODE_HPP
-#define MINORFS_CAPFS_BASENODE_HPP
-#include <string>
-#include <inttypes.h>
-#define FUSE_USE_VERSION 26
-#include <fuse.h>
-#include <sys/stat.h>
-#include <errno.h>
-class BaseNode;
-class BaseNode {
-    bool mAccess;
-    std::string mRelPath;
-  public:
-    BaseNode();
-    BaseNode(std::string relpath);
-    int stat(struct stat *s);
-    int readlink(char *b, size_t l);
-    int mknod(mode_t m, dev_t d); 
-    int mkdir(mode_t m); 
-    int unlink(); 
-    int rmdir();
-    int symlink(std::string l); 
-    int rename(BaseNode l); 
-    int link(BaseNode l); 
-    int chmod(mode_t m); 
-    int truncate(off_t off); 
-    int getxattr(const char *n, char *v, size_t s);  
-    int listxattr(char *l, size_t s);
-    int access(int m);
-    int bmap(size_t blocksize, uint64_t *idx);
-    int open(uint64_t *fh,int flags);
-    int opendir(uint64_t *fh);
-    int create(uint64_t *fh,mode_t m);
-};
-#endif
+#include <CapFs.hpp>
+CapFs::CapFs() {}
+BaseNode CapFs::operator[](std::string relpath){
+  return BaseNode(relpath);
+}
+OpenBaseNode CapFs::operator[](uint64_t fh){
+  return OpenBaseNode(fh);
+}
