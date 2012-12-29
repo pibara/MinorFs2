@@ -1,10 +1,8 @@
 #include "OpenBaseNode.hpp"
 #include <errno.h>
-#include <iostream>
 namespace capfs {
 namespace fs {
 OpenBaseNode::OpenBaseNode(uint64_t fh):mFh(fh){
-  std::cerr << "fh=" << mFh << std::endl;
 }
 int OpenBaseNode::release(){ 
   return 0;
@@ -25,7 +23,6 @@ int OpenBaseNode::fsync(int isdatasync){
   return 0;
 }
 int OpenBaseNode::readdir(void *buf, fuse_fill_dir_t filler, off_t offset){ 
-  std::cerr << "FH=" << mFh << std::endl;
   if (mFh == 0) { //the CapFs rootdir
      filler(buf, ".", NULL, 0);
      filler(buf, "..", NULL, 0);
