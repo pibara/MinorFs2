@@ -30,6 +30,7 @@
 #include <string.h>
 
 namespace capfs {
+namespace algo {
 //The public constructor.
 TripleHashNode::TripleHashNode(std::string secretsalt,std::string b32cap):
     mSalt(secretsalt),
@@ -120,5 +121,6 @@ std::string TripleHashNode::rawpath() const {
 }
 TripleHashNode TripleHashNode::operator[](std::string childnodename) const {
   return TripleHashNode(childnodename,this);
+}
 }
 }

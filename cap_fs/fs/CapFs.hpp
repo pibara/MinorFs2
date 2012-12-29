@@ -26,13 +26,15 @@
 #include "BaseFs.hpp"
 #include "BaseNode.hpp"
 #include "OpenBaseNode.hpp"
+#include "../algo/TripleHashLookup.hpp"
 #include <string>
 #include <inttypes.h>
 namespace capfs {
 namespace fs {
 class CapFs: public BaseFs {
+    capfs::algo::TripleHashLookup mThLookup;
   public:
-    CapFs();
+    CapFs(std::string secretsalt);
     BaseNode operator[](std::string relpath);
     OpenBaseNode operator[](uint64_t fh);
 };

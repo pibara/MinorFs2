@@ -25,9 +25,12 @@
 
 namespace capfs {
 namespace fs {
-CapFs::CapFs() {}
+CapFs::CapFs(std::string secretsalt):mThLookup(secretsalt) {}
 BaseNode CapFs::operator[](std::string relpath){
-  return BaseNode(relpath);
+  if (relpath == "/") {
+    return BaseNode(relpath);
+  }
+  return BaseNode(mThLookup[relpath]);  
 }
 OpenBaseNode CapFs::operator[](uint64_t fh){
   return OpenBaseNode(fh);

@@ -55,9 +55,9 @@ set(capfs_SOURCES
         access/AppArmorCheck.cpp
         access/CapFsGuard.cpp 
         access/NoAccessFs.cpp
-        capfs_algo/TripleHashLookup.cpp
-        capfs_algo/TripleHashNode.cpp  
-        capfs_algo/TripleHashParentChild.cpp)
+        algo/TripleHashLookup.cpp
+        algo/TripleHashNode.cpp  
+        algo/TripleHashParentChild.cpp)
 add_executable(capfs ${capfs_SOURCES})
 #We need to link against the fuse library and the openssl crypto library.
 target_link_libraries(capfs fuse crypto)

@@ -25,10 +25,13 @@
 #include <string.h>
 #include <sys/types.h>
 #include <attr/xattr.h>
+#include <sys/stat.h>
+#include <unistd.h>
 namespace capfs {
 namespace fs {
 BaseNode::BaseNode():mAccess(false),mRelPath(""){}
 BaseNode::BaseNode(std::string relpath):mAccess(true),mRelPath(relpath){}
+BaseNode::BaseNode(capfs::algo::TripleHashParentChild pc):mAccess(true),mRelPath(""),mParentChild(pc){}
 int BaseNode::stat(struct stat *s) { 
   if (mAccess == false) {
     return -EPERM;
@@ -38,6 +41,21 @@ int BaseNode::stat(struct stat *s) {
      s->st_mode = S_IFDIR | 0755;
      s->st_nlink = 3; 
      return 0;
+  }
+  if (mParentChild.child()) {
+     int rval=lstat(mParentChild.child().rawpath().c_str(), s);
+     if (rval == -1)
+        return -errno;
+     mode_t groupbits=s->st_mode & 0x070;
+     mode_t accessbits=s->st_mode & 0x0700;
+     s->st_mode |= (accessbits >> 3);
+     s->st_mode |= (accessbits >> 6);
+     if (groupbits==0x060) { //Dir
+        s->st_mode |= S_IFDIR;
+     } else if (groupbits==0x070) { //Symlink
+        s->st_mode |= S_IFLNK;
+     }
+     return 0;     
   }
   return -ENOENT;  
 }

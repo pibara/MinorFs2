@@ -29,15 +29,18 @@
 #include <fuse.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include "../algo/TripleHashParentChild.hpp"
 namespace capfs {
 namespace fs {
 class BaseNode;
 class BaseNode {
     bool mAccess;
     std::string mRelPath;
+    capfs::algo::TripleHashParentChild mParentChild;
   public:
     BaseNode();
     BaseNode(std::string relpath);
+    BaseNode(capfs::algo::TripleHashParentChild pc);
     int stat(struct stat *s);
     int readlink(char *b, size_t l);
     int mknod(mode_t m, dev_t d); 

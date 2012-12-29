@@ -38,7 +38,7 @@ class CapFsGuard {
     capfs::fs::CapFs  mAccess;
     static gid_t getgrnamgid();
   public:
-    CapFsGuard(std::string acpath);
+    CapFsGuard(std::string acpath,std::string secretsalt);
     capfs::fs::BaseFs & operator()(gid_t gid,pid_t pid);
 };
 }

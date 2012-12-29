@@ -25,6 +25,7 @@
 #define MINORFS_CAPFS_TRIPLEHASHNODE_HPP
 #include <string>
 namespace capfs {
+namespace algo {
 class TripleHashNode;
 class TripleHashNode {
      unsigned char mKey1[32];
@@ -47,6 +48,8 @@ class TripleHashNode {
      unsigned char const * cryptokey() const;
      std::string rawpath() const;
      TripleHashNode operator[](std::string childnodename) const;
+     operator bool(){return mVKey2;}
 };
+}
 }
 #endif

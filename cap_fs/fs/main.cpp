@@ -9,7 +9,7 @@
 #error "This filesystem depends on XATTR support."
 #endif
 void *capfs_init(struct fuse_conn_info *conn) {
-   return reinterpret_cast<void*>(new capfs::access::CapFsGuard("/minorfs/ac"));
+   return reinterpret_cast<void*>(new capfs::access::CapFsGuard("/minorfs/ac","FIXME:ThisShouldBeASecretSalt"));
 }
 void capfs_destroy(void *capfsgvoid){
   capfs::access::CapFsGuard *capfsguard=reinterpret_cast<capfs::access::CapFsGuard *>(capfsgvoid);

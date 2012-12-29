@@ -21,18 +21,18 @@
 //FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
 //ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //DEALINGS IN THE SOFTWARE.
-#ifndef MINORFS_CAPFS_TRIPLEHASHPARENTCHILD_HPP
-#define MINORFS_CAPFS_TRIPLEHASHPARENTCHILD_HPP
+#ifndef MINORFS_CAPFS_TRIPLEHASHLOOKUP_HPP
+#define MINORFS_CAPFS_TRIPLEHASHLOOKUP_HPP
 #include <string>
-#include "TripleHashNode.hpp"
+#include "TripleHashParentChild.hpp"
 namespace capfs {
-class TripleHashParentChild {
-       TripleHashNode mParent;
-       TripleHashNode mChild;
+namespace algo {
+class TripleHashLookup {
+       std::string mSalt;
    public:
-       TripleHashParentChild(std::string salt,std::string path);
-       TripleHashNode child() const;
-       TripleHashNode parent() const;
+       TripleHashLookup(std::string salt);
+       TripleHashParentChild operator[](std::string path);
 }; 
+}
 }
 #endif

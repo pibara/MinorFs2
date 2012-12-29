@@ -2,7 +2,7 @@
 #include <boost/tokenizer.hpp>
 
 namespace capfs {
-
+namespace algo {
 TripleHashParentChild::TripleHashParentChild(std::string salt,std::string path) {
    boost::char_separator<char> sep("/");
    boost::tokenizer<boost::char_separator<char> > tokens(path,sep);
@@ -20,11 +20,12 @@ TripleHashParentChild::TripleHashParentChild(std::string salt,std::string path) 
        }
    }
 }
+TripleHashParentChild::TripleHashParentChild(){}
 TripleHashNode TripleHashParentChild::child() const {
   return mChild;
 }
 TripleHashNode TripleHashParentChild::parent() const {
   return mParent;
 }
-
+} 
 }
