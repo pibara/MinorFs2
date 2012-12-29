@@ -1,7 +1,8 @@
-#include <OpenBaseNode.hpp>
+#include <fs/OpenBaseNode.hpp>
 #include <errno.h>
 #include <iostream>
-
+namespace capfs {
+namespace fs {
 OpenBaseNode::OpenBaseNode(uint64_t fh):mFh(fh){
   std::cerr << "fh=" << mFh << std::endl;
 }
@@ -50,4 +51,5 @@ int OpenBaseNode::ioctl(int cmd, void *arg, unsigned int flags, void *data){
 int OpenBaseNode::poll(fuse_pollhandle *ph, unsigned *reventsp){
   return -EPERM;
 }
-
+}
+}

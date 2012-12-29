@@ -29,6 +29,8 @@
 #include <fuse.h>
 #include <sys/stat.h>
 #include <errno.h>
+namespace capfs {
+namespace fs {
 class BaseNode;
 class BaseNode {
     bool mAccess;
@@ -55,4 +57,6 @@ class BaseNode {
     int opendir(uint64_t *fh);
     int create(uint64_t *fh,mode_t m);
 };
+}
+}
 #endif

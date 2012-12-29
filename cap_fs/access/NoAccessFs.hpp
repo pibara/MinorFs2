@@ -21,23 +21,20 @@
 //FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
 //ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //DEALINGS IN THE SOFTWARE.
-#ifndef MINORFS_CAPFS_GUARD_HPP
-#define MINORFS_CAPFS_GUARD_HPP
-#include <CapFs.hpp>
-#include <NoAccessFs.hpp>
-#include <AppArmorCheck.hpp>
-#include <sys/types.h>
-#include <grp.h>
-#include <unistd.h>
-
-class CapFsGuard {
-    gid_t mMinorFsGid;
-    AppArmorCheck mAppArmorConfined;
-    NoAccessFs mNoAccess;
-    CapFs  mAccess;
-    static gid_t getgrnamgid();
+#ifndef MINORFS_CAPFS_NOACCESSFS_HPP
+#define MINORFS_CAPFS_NOACCESSFS_HPP
+#include <fs/BaseFs.hpp>
+#include <fs/BaseNode.hpp>
+#include <fs/OpenBaseNode.hpp>
+#include <string>
+#include <inttypes.h>
+namespace capfs {
+namespace access {
+class NoAccessFs: public capfs::fs::BaseFs {
   public:
-    CapFsGuard(std::string acpath);
-    BaseFs & operator()(gid_t gid,pid_t pid);
+    capfs::fs::BaseNode operator[](std::string relpath);
+    capfs::fs::OpenBaseNode operator[](uint64_t fh);
 };
+}
+}
 #endif

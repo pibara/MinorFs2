@@ -21,11 +21,16 @@
 //FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
 //ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //DEALINGS IN THE SOFTWARE.
-#include <CapFs.hpp>
+#include <fs/CapFs.hpp>
+
+namespace capfs {
+namespace fs {
 CapFs::CapFs() {}
 BaseNode CapFs::operator[](std::string relpath){
   return BaseNode(relpath);
 }
 OpenBaseNode CapFs::operator[](uint64_t fh){
   return OpenBaseNode(fh);
+}
+}
 }

@@ -21,16 +21,24 @@
 //FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
 //ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //DEALINGS IN THE SOFTWARE.
-#ifndef MINORFS_CAPFS_NOACCESSFS_HPP
-#define MINORFS_CAPFS_NOACCESSFS_HPP
-#include <BaseFs.hpp>
-#include <BaseNode.hpp>
-#include <OpenBaseNode.hpp>
-#include <string>
-#include <inttypes.h>
-class NoAccessFs: public BaseFs {
-  public:
-    BaseNode operator[](std::string relpath);
-    OpenBaseNode operator[](uint64_t fh);
-};
-#endif
+#include <access/CapFsGuard.hpp>
+namespace capfs {
+namespace access {
+gid_t CapFsGuard::getgrnamgid() {
+      struct group *grp=getgrnam("minorfs");
+      if (grp) {
+         return grp->gr_gid;
+      }
+      return 0;
+}
+CapFsGuard::CapFsGuard(std::string acpath):mMinorFsGid(getgrnamgid()),mAppArmorConfined(acpath){}
+
+capfs::fs::BaseFs & CapFsGuard::operator()(gid_t gid,pid_t pid) {
+       if ((gid == mMinorFsGid) || mAppArmorConfined(pid)) {
+           return mAccess;
+       } else {
+           return mNoAccess;
+       }
+}
+}
+}

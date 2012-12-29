@@ -23,15 +23,19 @@
 //DEALINGS IN THE SOFTWARE.
 #ifndef MINORFS_CAPFS_CAPFS_HPP
 #define MINORFS_CAPFS_CAPFS_HPP
-#include <BaseFs.hpp>
-#include <BaseNode.hpp>
-#include <OpenBaseNode.hpp>
+#include <fs/BaseFs.hpp>
+#include <fs/BaseNode.hpp>
+#include <fs/OpenBaseNode.hpp>
 #include <string>
 #include <inttypes.h>
+namespace capfs {
+namespace fs {
 class CapFs: public BaseFs {
   public:
     CapFs();
     BaseNode operator[](std::string relpath);
     OpenBaseNode operator[](uint64_t fh);
 };
+}
+}
 #endif

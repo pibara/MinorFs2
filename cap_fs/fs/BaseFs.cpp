@@ -21,13 +21,14 @@
 //FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
 //ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //DEALINGS IN THE SOFTWARE.
-#include <BaseFs.hpp>
+#include <fs/BaseFs.hpp>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <string.h>
 #include <sys/vfs.h>
-
+namespace capfs {
+namespace fs {
 int BaseFs::statfs(struct statvfs *fst){ 
     struct statvfs st;
     int rv = statvfs("/var/minorfs/data",&st);
@@ -35,4 +36,6 @@ int BaseFs::statfs(struct statvfs *fst){
         memcpy(fst, &st, sizeof(struct statfs));        
     }
     return rv;
+}
+}
 }

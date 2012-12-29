@@ -27,6 +27,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <boost/lexical_cast.hpp>
+namespace capfs {
+namespace access {
 class AppArmorCheck {
     std::string mAcFsMountpoint;
     struct stat mStat;
@@ -34,4 +36,6 @@ class AppArmorCheck {
     AppArmorCheck(std::string acfsmp);
     bool operator()(pid_t pid);
 };
+}
+}
 #endif

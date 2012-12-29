@@ -26,6 +26,8 @@
 #include <inttypes.h>
 #define FUSE_USE_VERSION 26
 #include <fuse.h>
+namespace capfs {
+namespace fs {
 class OpenBaseNode {
     uint64_t mFh;
   public:
@@ -44,4 +46,6 @@ class OpenBaseNode {
     int ioctl(int cmd, void *arg, unsigned int flags, void *data);
     int poll(fuse_pollhandle *ph, unsigned *reventsp);
 };
+}
+}
 #endif

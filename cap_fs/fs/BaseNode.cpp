@@ -21,14 +21,12 @@
 //FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
 //ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //DEALINGS IN THE SOFTWARE.
-#include <BaseNode.hpp>
+#include <fs/BaseNode.hpp>
 #include <string.h>
 #include <sys/types.h>
 #include <attr/xattr.h>
-
-bool mAccess;
-    std::string mRelPath;
-
+namespace capfs {
+namespace fs {
 BaseNode::BaseNode():mAccess(false),mRelPath(""){}
 BaseNode::BaseNode(std::string relpath):mAccess(true),mRelPath(relpath){}
 int BaseNode::stat(struct stat *s) { 
@@ -71,3 +69,5 @@ int BaseNode::opendir(uint64_t *fh)  {
   return -ENOENT;
 }
 int BaseNode::create(uint64_t *fh,mode_t m) {return -EPERM;}
+}
+}

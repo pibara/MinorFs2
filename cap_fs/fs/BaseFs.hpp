@@ -23,10 +23,12 @@
 //DEALINGS IN THE SOFTWARE.
 #ifndef MINORFS_CAPFS_BASEFS_HPP
 #define MINORFS_CAPFS_BASEFS_HPP
-#include <BaseNode.hpp>
-#include <OpenBaseNode.hpp>
+#include <fs/BaseNode.hpp>
+#include <fs/OpenBaseNode.hpp>
 #include <string>
 #include <inttypes.h>
+namespace capfs {
+namespace fs {
 class BaseFs {
   public:
     virtual ~BaseFs() {} 
@@ -34,4 +36,6 @@ class BaseFs {
     virtual OpenBaseNode operator[](uint64_t fh)=0;
     int statfs(struct statvfs *s);
 };
+}
+}
 #endif
