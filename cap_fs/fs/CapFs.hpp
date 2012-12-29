@@ -23,9 +23,9 @@
 //DEALINGS IN THE SOFTWARE.
 #ifndef MINORFS_CAPFS_CAPFS_HPP
 #define MINORFS_CAPFS_CAPFS_HPP
-#include <fs/BaseFs.hpp>
-#include <fs/BaseNode.hpp>
-#include <fs/OpenBaseNode.hpp>
+#include "BaseFs.hpp"
+#include "BaseNode.hpp"
+#include "OpenBaseNode.hpp"
 #include <string>
 #include <inttypes.h>
 namespace capfs {

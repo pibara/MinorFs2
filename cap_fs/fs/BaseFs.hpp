@@ -23,8 +23,8 @@
 //DEALINGS IN THE SOFTWARE.
 #ifndef MINORFS_CAPFS_BASEFS_HPP
 #define MINORFS_CAPFS_BASEFS_HPP
-#include <fs/BaseNode.hpp>
-#include <fs/OpenBaseNode.hpp>
+#include "BaseNode.hpp"
+#include "OpenBaseNode.hpp"
 #include <string>
 #include <inttypes.h>
 namespace capfs {

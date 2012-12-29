@@ -24,7 +24,7 @@
 #ifndef MINORFS_CAPFS_TRIPLEHASHPARENTCHILD_HPP
 #define MINORFS_CAPFS_TRIPLEHASHPARENTCHILD_HPP
 #include <string>
-#include <TripleHashNode.hpp>
+#include "TripleHashNode.hpp"
 namespace capfs {
 class TripleHashParentChild {
        TripleHashNode mParent;

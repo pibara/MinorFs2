@@ -26,7 +26,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <boost/lexical_cast.hpp>
+#include <string>
 namespace capfs {
 namespace access {
 class AppArmorCheck {

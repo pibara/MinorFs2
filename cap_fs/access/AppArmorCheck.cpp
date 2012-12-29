@@ -21,14 +21,15 @@
 //FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
 //ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //DEALINGS IN THE SOFTWARE.
-#include <access/AppArmorCheck.hpp>
-#include <boost/lexical_cast.hpp>
+#include "AppArmorCheck.hpp"
+#include <string>
+//#include <boost/lexical_cast.hpp>
 namespace capfs {
 namespace access {
 AppArmorCheck::AppArmorCheck(std::string acfsmp):mAcFsMountpoint(acfsmp){}
 
 bool AppArmorCheck::operator()(pid_t pid) {
-        std::string acfspath=mAcFsMountpoint + "/" + boost::lexical_cast<std::string>(pid);
+        std::string acfspath=mAcFsMountpoint + "/" + std::to_string(pid);
         return (stat(acfspath.c_str(),&mStat)==0);          
 }
 }

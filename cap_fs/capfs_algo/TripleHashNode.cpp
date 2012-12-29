@@ -22,8 +22,8 @@
 //ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //DEALINGS IN THE SOFTWARE.
 #include <iostream>
-#include <TripleHashNode.hpp>
-#include <base32.hpp>
+#include "TripleHashNode.hpp"
+#include "base32.hpp"
 #include <openssl/engine.h>
 #include <openssl/hmac.h>
 #include <openssl/evp.h>

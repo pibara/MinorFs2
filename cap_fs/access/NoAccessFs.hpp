@@ -23,9 +23,9 @@
 //DEALINGS IN THE SOFTWARE.
 #ifndef MINORFS_CAPFS_NOACCESSFS_HPP
 #define MINORFS_CAPFS_NOACCESSFS_HPP
-#include <fs/BaseFs.hpp>
-#include <fs/BaseNode.hpp>
-#include <fs/OpenBaseNode.hpp>
+#include "../fs/BaseFs.hpp"
+#include "../fs/BaseNode.hpp"
+#include "../fs/OpenBaseNode.hpp"
 #include <string>
 #include <inttypes.h>
 namespace capfs {

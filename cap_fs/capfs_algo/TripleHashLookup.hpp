@@ -24,7 +24,7 @@
 #ifndef MINORFS_CAPFS_TRIPLEHASHLOOKUP_HPP
 #define MINORFS_CAPFS_TRIPLEHASHLOOKUP_HPP
 #include <string>
-#include <TripleHashParentChild.hpp>
+#include "TripleHashParentChild.hpp"
 namespace capfs {
 class TripleHashLookup {
        std::string mSalt;

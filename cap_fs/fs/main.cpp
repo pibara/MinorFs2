@@ -1,7 +1,7 @@
 #ifndef HAVE_SETXATTR
 #define HAVE_SETXATTR 1
 #endif
-#include <access/CapFsGuard.hpp>
+#include "../access/CapFsGuard.hpp"
 #define FUSE_USE_VERSION 26
 #include <fuse.h>
 #include <errno.h>

@@ -23,9 +23,9 @@
 //DEALINGS IN THE SOFTWARE.
 #ifndef MINORFS_CAPFS_GUARD_HPP
 #define MINORFS_CAPFS_GUARD_HPP
-#include <fs/CapFs.hpp>
-#include <access/NoAccessFs.hpp>
-#include <access/AppArmorCheck.hpp>
+#include "../fs/CapFs.hpp"
+#include "NoAccessFs.hpp"
+#include "AppArmorCheck.hpp"
 #include <sys/types.h>
 #include <grp.h>
 #include <unistd.h>
