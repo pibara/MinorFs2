@@ -29,5 +29,5 @@ BaseNode NoAccessFs::operator[](std::string relpath){
   return BaseNode();
 }
 OpenBaseNode NoAccessFs::operator[](uint64_t fh){
-  return OpenBaseNode();
+  return OpenBaseNode(fh);
 }

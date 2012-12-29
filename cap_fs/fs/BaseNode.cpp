@@ -23,6 +23,8 @@
 //DEALINGS IN THE SOFTWARE.
 #include <BaseNode.hpp>
 #include <string.h>
+#include <sys/types.h>
+#include <attr/xattr.h>
 
 bool mAccess;
     std::string mRelPath;
@@ -51,10 +53,21 @@ int BaseNode::rename(BaseNode l) {return -EPERM;}
 int BaseNode::link(BaseNode l) {return -EPERM;}
 int BaseNode::chmod(mode_t m) {return -EPERM;}
 int BaseNode::truncate(off_t off) {return -EPERM;}
-int BaseNode::getxattr(const char *n, char *v, size_t s)  {return -EPERM;}
+int BaseNode::getxattr(const char *n, char *v, size_t s)  {
+  return -ENOATTR;
+}
 int BaseNode::listxattr(char *l, size_t s) {return -EPERM;}
 int BaseNode::access(int m) {return -EPERM;}
 int BaseNode::bmap(size_t blocksize, uint64_t *idx) {return -EPERM;}
 int BaseNode::open(uint64_t *fh,int flags) {return -EPERM;}
-int BaseNode::opendir(uint64_t *fh)  {return -EPERM;}
+int BaseNode::opendir(uint64_t *fh)  {
+  if (mAccess == false) {
+    return -EPERM;
+  }
+  if (mRelPath == "/") {
+    *fh=0;  //We use zero as special root dir dir handle.
+    return 0;
+  }
+  return -ENOENT;
+}
 int BaseNode::create(uint64_t *fh,mode_t m) {return -EPERM;}
