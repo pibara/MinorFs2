@@ -44,7 +44,7 @@ class BaseNode {
     int stat(struct stat *s);
     int readlink(char *b, size_t l);
     int mknod(mode_t m, dev_t d); 
-    int mkdir(mode_t m); 
+    int mkdir(mode_t m,bool cancreateroot); 
     int unlink(); 
     int rmdir();
     int symlink(std::string l); 

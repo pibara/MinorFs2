@@ -27,6 +27,7 @@
 #include <attr/xattr.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <fcntl.h>
 namespace capfs {
 namespace fs {
 BaseNode::BaseNode():mAccess(false),mRelPath(""){}
@@ -159,17 +160,150 @@ int BaseNode::getxattr(const char *n, char *v, size_t s)  {
   }
   return -ENOENT;
 }
+int BaseNode::access(int m) {
+  if (mAccess == false) {
+    return -EPERM;
+  }
+  if (mRelPath == "/") {
+    if (m & W_OK) {
+      return -EACCES;
+    }
+    return 0;
+  }
+  if (mParentChild.child()) {
+    if ((m & W_OK) and not (mParentChild.child().canWrite())) {
+       return -EACCES;
+    }
+    if (m & X_OK) {
+       struct stat statdata;
+       struct stat *s=&statdata;
+       int rval=lstat(mParentChild.child().rawpath().c_str(), s);
+       //If the raw node does not exist, return the error code.
+       if (rval == -1) {
+          return -EACCES;
+       }
+       if ((s->st_mode & 00100) != 00100) {
+          return -EACCES; 
+       }
+    }
+    return 0;
+  }
+  return -ENOENT;
+}
+int BaseNode::readlink(char *b, size_t l) { 
+  if (mAccess == false) {
+    return -EPERM;
+  }
+  if (mRelPath == "/") {
+    return -ENOTSUP;
+  }
+  if (mParentChild.child()) {
+     return -ENOTSUP; //TODO
+  }
+  return -ENOENT;
+}
+int BaseNode::mknod(mode_t m, dev_t d) { 
+  if (mAccess == false) {
+    return -EPERM;
+  } 
+  if (mRelPath == "/") {
+    return -ENOTSUP;
+  }
+  if (mParentChild.child()) {
+    struct stat statdata;
+    struct stat *s=&statdata;
+    int rval=lstat(mParentChild.child().rawpath().c_str(), s);
+    //If the raw node does exist, return an error code.
+    if (rval != -1) {
+       return -EEXIST;
+    }
+    //Check if the parent node exists
+    if ((not mParentChild.parent())||(not mParentChild.child().canWrite())) {
+       return -EPERM;
+    }
+    rval=lstat(mParentChild.parent().rawpath().c_str(), s);
+    if (rval == -1) {
+       return -ENOENT;
+    }
+    //Check if parent is a directory.
+    if ((s->st_mode & 0070) != 0060) {
+       return -ENOTDIR;
+    }
+    //Now first create the new node.
+    if (m & S_IFREG) {
+       //Make sure all inbetween dirs exist.
+       ::mkdir(mParentChild.child().d1().c_str(),0700);
+       ::mkdir(mParentChild.child().d2().c_str(),0700);
+       //Determine the mode for the new node.
+       mode_t newfilemode=00640 | (m & 00100);
+       //Create the raw node.
+       rval=::mknod(mParentChild.child().rawpath().c_str(),newfilemode,d);
+       if (rval == -1) {
+          return -errno;
+       }
+    }
+    else {
+       //FIXME: For now no support for S_IFCHR,S_IFBLK,S_IFIFO or S_IFSOCK, fix this later.
+       return -EPERM;
+    }
+    //Add an entry to the parent directory.
+    //FIXME: Implement adding to directory.
+    return 0;
+  }
+  return -ENOENT;
+}
+int BaseNode::mkdir(mode_t m,bool cancreateroot) { 
+  if (mAccess == false) {
+    return -EPERM;
+  }
+  if (mRelPath == "/") {
+    return -ENOTSUP;
+  }
+  if (mParentChild.child()) {
+    struct stat statdata;
+    struct stat *s=&statdata;
+    if (mParentChild.parent()) {
+      //For non sparse-cap node's, the parent node must exist and be a directory.
+      int rval=lstat(mParentChild.parent().rawpath().c_str(), s);
+      if (rval == -1) {
+         return -ENOENT;
+      }
+      if ((s->st_mode & 0070) != 0060) {
+       return -ENOTDIR;
+      }
+    } else {
+      if (not cancreateroot) {
+         return -EPERM;
+      }
+    }
+    int rval=lstat(mParentChild.child().rawpath().c_str(), s);
+    //If the raw node does exist, return an error code.
+    if (rval != -1) {
+       return -EEXIST;
+    }
+    //Make sure all inbetween dirs exist.
+    ::mkdir(mParentChild.child().d1().c_str(),0700);
+    ::mkdir(mParentChild.child().d2().c_str(),0700);
+    //Create an empty directory file for our new directory.
+    rval=::mknod(mParentChild.child().rawpath().c_str(),00760,0);
+    if (rval == -1) {
+      return -errno;
+    }
+    if (mParentChild.parent()) {
+        //Add an entry to the parent directory.
+        //FIXME: Implement adding to parent directory.
+    }
+    return 0;
+  }
+  return -EPERM;
+}
 
-int BaseNode::readlink(char *b, size_t l) { return -EPERM;}
-int BaseNode::mknod(mode_t m, dev_t d) { return -EPERM;}
-int BaseNode::mkdir(mode_t m) { return -EPERM;}
 int BaseNode::unlink() { return -EPERM;}
 int BaseNode::rmdir() { return -EPERM;}
 int BaseNode::symlink(std::string l) {return -EPERM;}
 int BaseNode::rename(BaseNode l) {return -EPERM;}
 int BaseNode::link(BaseNode l) {return -EPERM;}
 int BaseNode::truncate(off_t off) {return -EPERM;}
-int BaseNode::access(int m) {return -EPERM;}
 int BaseNode::bmap(size_t blocksize, uint64_t *idx) {return -EPERM;}
 int BaseNode::open(uint64_t *fh,int flags) {return -EPERM;}
 int BaseNode::opendir(uint64_t *fh)  {

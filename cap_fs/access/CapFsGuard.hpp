@@ -40,6 +40,7 @@ class CapFsGuard {
   public:
     CapFsGuard(std::string acpath,std::string secretsalt);
     capfs::fs::BaseFs & operator()(gid_t gid,pid_t pid);
+    bool operator()(gid_t gid);
 };
 }
 }

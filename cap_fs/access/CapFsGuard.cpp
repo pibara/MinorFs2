@@ -40,5 +40,8 @@ capfs::fs::BaseFs & CapFsGuard::operator()(gid_t gid,pid_t pid) {
            return mNoAccess;
        }
 }
+bool CapFsGuard::operator()(gid_t gid) {
+       return (gid == mMinorFsGid);
+}
 }
 }

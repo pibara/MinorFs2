@@ -47,6 +47,8 @@ class TripleHashNode {
      std::string rocap() const;
      unsigned char const * cryptokey() const;
      std::string rawpath() const;
+     std::string d1() const;
+     std::string d2() const;
      TripleHashNode operator[](std::string childnodename) const;
      operator bool(){return mVKey2;}
 };

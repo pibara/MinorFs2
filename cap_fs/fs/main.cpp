@@ -44,7 +44,7 @@ int capfs_mkdir(const char *p, mode_t m){
   struct fuse_context *context=fuse_get_context();
   capfs::access::CapFsGuard *capfsguard=reinterpret_cast<capfs::access::CapFsGuard *>(context->private_data);
   capfs::fs::BaseFs &capfs= (*capfsguard)(context->gid,context->pid);
-  return capfs[p].mkdir(m);
+  return capfs[p].mkdir(m,(*capfsguard)(context->gid));
 }
 int capfs_unlink(const char *p){
   struct fuse_context *context=fuse_get_context();

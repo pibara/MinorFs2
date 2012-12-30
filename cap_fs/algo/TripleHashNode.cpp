@@ -117,8 +117,29 @@ std::string TripleHashNode::rawpath() const {
   if (mVKey3 == false) {
       derivekey(mKey2,"storage","nosalt",mKey3);
   }
-  return treepath(b32encode<32>(mKey3));
+  return std::string("/var/minorfs/data") + treepath(b32encode<32>(mKey3));
 }
+
+std::string TripleHashNode::d2() const {
+  if (mVKey2 == false) {
+     return "";
+  }
+  if (mVKey3 == false) {
+      derivekey(mKey2,"storage","nosalt",mKey3);
+  }
+  return std::string("/var/minorfs/data") + treepath(b32encode<32>(mKey3)).substr(0,6);
+}
+
+std::string TripleHashNode::d1() const {
+  if (mVKey2 == false) {
+     return "";
+  }
+  if (mVKey3 == false) {
+      derivekey(mKey2,"storage","nosalt",mKey3);
+  }
+  return std::string("/var/minorfs/data") + treepath(b32encode<32>(mKey3)).substr(0,3);
+}
+
 TripleHashNode TripleHashNode::operator[](std::string childnodename) const {
   return TripleHashNode(childnodename,this);
 }
