@@ -30,6 +30,7 @@
 #include <inttypes.h>
 namespace capfs {
 namespace access {
+//Filesystem abstraction that only gives access to the top level directory.
 class NoAccessFs: public capfs::fs::BaseFs {
   public:
     capfs::fs::BaseNode operator[](std::string relpath);

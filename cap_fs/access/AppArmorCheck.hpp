@@ -29,8 +29,11 @@
 #include <string>
 namespace capfs {
 namespace access {
+//This class checks if the process accesing CapFs is running AppArmor confined.
 class AppArmorCheck {
+    //The accessFs filesystem mountpoint.
     std::string mAcFsMountpoint;
+    //A stat structure as member. May want to move this to a stack variable instead if we run multi threaded.
     struct stat mStat;
   public:
     AppArmorCheck(std::string acfsmp);

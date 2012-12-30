@@ -31,15 +31,27 @@
 #include <unistd.h>
 namespace capfs {
 namespace access {
+//This class guards access to the CapFs filesystem so that:
+//* The root is always accessible.
+//* CapFs is accessible to high level minorfs filesystems.
+//* CapFs is accessible to AppArmor confined p[rocesses.
+//* Creation of private root dirrectories is only accessible to high level minorfs filesystems.
 class CapFsGuard {
+    //The gid of high level minorfs filesystems.
     gid_t mMinorFsGid;
+    //Helper object for checking if process runs AppArmor confined.
     AppArmorCheck mAppArmorConfined;
+    //FileSystem object that gives access only to the top level directory. This is exposed to non confined processes.
     NoAccessFs mNoAccess;
+    //The CapFs filesystem. This is exposed to confined processes and high level minorfs filesystems.
     capfs::fs::CapFs  mAccess;
+    //Static helper function for looking up mMinorFsGid
     static gid_t getgrnamgid();
   public:
     CapFsGuard(std::string acpath,std::string secretsalt);
+    //Exposing the proper file-system abstraction node to processes.
     capfs::fs::BaseFs & operator()(gid_t gid,pid_t pid);
+    //Looking up if a process is a high level filesystem that is allowed to create private root directories.
     bool operator()(gid_t gid);
 };
 }
