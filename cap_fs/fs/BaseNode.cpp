@@ -72,14 +72,6 @@ int BaseNode::stat(struct stat *s) {
   }
   return -ENOENT;  
 }
-int BaseNode::readlink(char *b, size_t l) { return -EPERM;}
-int BaseNode::mknod(mode_t m, dev_t d) { return -EPERM;}
-int BaseNode::mkdir(mode_t m) { return -EPERM;}
-int BaseNode::unlink() { return -EPERM;}
-int BaseNode::rmdir() { return -EPERM;}
-int BaseNode::symlink(std::string l) {return -EPERM;}
-int BaseNode::rename(BaseNode l) {return -EPERM;}
-int BaseNode::link(BaseNode l) {return -EPERM;}
 int BaseNode::chmod(mode_t m) {
   if (mAccess == false) {
     return -EPERM;
@@ -111,14 +103,72 @@ int BaseNode::chmod(mode_t m) {
         return -errno;
     return 0;
   } 
-  return -EPERM;
+  return -ENOENT;
 
 }
-int BaseNode::truncate(off_t off) {return -EPERM;}
-int BaseNode::getxattr(const char *n, char *v, size_t s)  {
-  return -ENOATTR;
+int BaseNode::listxattr(char *l, size_t s) {
+  if (mAccess == false) {
+    return -EPERM;
+  }
+  if (mRelPath == "/") {
+     return -EPERM;
+  }
+  if (mParentChild.child()) {
+    bool rw=mParentChild.child().canWrite();
+    size_t neededsize=7;
+    if (rw) {
+       neededsize +=6;
+    }
+    if (s < neededsize) {
+      return -ERANGE;
+    }
+    memset(l,0,neededsize);
+    strcpy(l,"rocap");
+    if (rw) {
+      strcpy(l+6,"rwcap");
+    }
+    return neededsize;
+  }
+  return -ENOENT;
 }
-int BaseNode::listxattr(char *l, size_t s) {return -EPERM;}
+int BaseNode::getxattr(const char *n, char *v, size_t s)  {
+  if (mAccess == false) {
+    return -EPERM;
+  }
+  if (mRelPath == "/") {
+     return -EPERM;
+  }
+  if (mParentChild.child()) {
+     if (strcmp(n,"rocap")==0) {
+       std::string cap=mParentChild.child().rocap();
+       if (s < (cap.size() +1)) {
+         return -ERANGE;
+       }
+       strcpy(v,cap.c_str());
+       return cap.size() +1;
+     }
+     if (strcmp(n,"rwcap")==0) {
+       std::string cap=mParentChild.child().rwcap(); 
+       if (s < (cap.size() +1)) {
+         return -ERANGE;
+       }
+       strcpy(v,cap.c_str());
+       return cap.size() +1;
+     }
+     return -ENOATTR;
+  }
+  return -ENOENT;
+}
+
+int BaseNode::readlink(char *b, size_t l) { return -EPERM;}
+int BaseNode::mknod(mode_t m, dev_t d) { return -EPERM;}
+int BaseNode::mkdir(mode_t m) { return -EPERM;}
+int BaseNode::unlink() { return -EPERM;}
+int BaseNode::rmdir() { return -EPERM;}
+int BaseNode::symlink(std::string l) {return -EPERM;}
+int BaseNode::rename(BaseNode l) {return -EPERM;}
+int BaseNode::link(BaseNode l) {return -EPERM;}
+int BaseNode::truncate(off_t off) {return -EPERM;}
 int BaseNode::access(int m) {return -EPERM;}
 int BaseNode::bmap(size_t blocksize, uint64_t *idx) {return -EPERM;}
 int BaseNode::open(uint64_t *fh,int flags) {return -EPERM;}
