@@ -36,24 +36,37 @@ int BaseNode::stat(struct stat *s) {
   if (mAccess == false) {
     return -EPERM;
   }
-  memset(s, 0, sizeof(struct stat));
   if (mRelPath == "/") {
+     memset(s, 0, sizeof(struct stat));
      s->st_mode = S_IFDIR | 0755;
      s->st_nlink = 3; 
      return 0;
   }
   if (mParentChild.child()) {
+     //Stat the underlying raw storage filsystem node.
      int rval=lstat(mParentChild.child().rawpath().c_str(), s);
+     //If the raw node does not exist, return the error code.
      if (rval == -1)
         return -errno;
-     mode_t groupbits=s->st_mode & 0x070;
-     mode_t accessbits=s->st_mode & 0x0700;
-     s->st_mode |= (accessbits >> 3);
-     s->st_mode |= (accessbits >> 6);
-     if (groupbits==0x060) { //Dir
+     //Before overwriting the mode, save the group bits and the owner exe bit.
+     mode_t groupbits=s->st_mode & 0070;
+     bool executable = ((s->st_mode & 00100) == 00100);
+     //The groupbits contain piggybacked node type information.
+     s->st_mode =0;
+     if (groupbits==0060) { //Dir
         s->st_mode |= S_IFDIR;
-     } else if (groupbits==0x070) { //Symlink
+     } else if (groupbits==0070) { //Symlink
         s->st_mode |= S_IFLNK;
+     }
+     //The The readable bits are always set, the owner executable bit is extended to group and others. 
+     if (executable) {
+        s->st_mode |= 00555;
+     } else {
+        s->st_mode |= 00444;
+     }
+     //If the triplehashnode is writable, set all writable bits.
+     if (mParentChild.child().canWrite()) {
+        s->st_mode |= 00222;
      }
      return 0;     
   }
@@ -67,7 +80,40 @@ int BaseNode::rmdir() { return -EPERM;}
 int BaseNode::symlink(std::string l) {return -EPERM;}
 int BaseNode::rename(BaseNode l) {return -EPERM;}
 int BaseNode::link(BaseNode l) {return -EPERM;}
-int BaseNode::chmod(mode_t m) {return -EPERM;}
+int BaseNode::chmod(mode_t m) {
+  if (mAccess == false) {
+    return -EPERM;
+  }
+  //No chmod on the filesystems root node.
+  if (mRelPath == "/") {
+     return -EPERM;
+  }
+  //On other nodes chmod is allowed but ignores all but the owner executable bit.
+  if (mParentChild.child()) {
+    //Stat the raw node to get the old mode.
+    struct stat statdata;
+    struct stat *s=&statdata;
+    int rval=lstat(mParentChild.child().rawpath().c_str(), s);
+    //If the raw node does not exist, return the error code.
+    if (rval == -1)
+        return -errno;
+    //Determine the new mode based on the old mode and the desired owner executable bit.
+    mode_t newmode = s->st_mode;
+    if (m & 00100) {
+       newmode = s->st_mode | 00100;
+    } else {
+       newmode = s->st_mode & (~(00100));
+    }
+    //Chmod the raw node.
+    rval=::chmod(mParentChild.child().rawpath().c_str(),newmode);
+    //If chmod fails, return error code.
+    if (rval == -1)
+        return -errno;
+    return 0;
+  } 
+  return -EPERM;
+
+}
 int BaseNode::truncate(off_t off) {return -EPERM;}
 int BaseNode::getxattr(const char *n, char *v, size_t s)  {
   return -ENOATTR;
