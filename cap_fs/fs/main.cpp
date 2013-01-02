@@ -290,7 +290,7 @@ int main(int argc, char *argv[])
       fuseargv[1]=argv[1];
       fuseargcount=2;
   }
-  string_literal_wrapper mino("-0");
+  string_literal_wrapper mino("-o");
   fuseargv[fuseargcount]=mino;     //After the argv[0] and optionaly a -d argument set some options:
   string_literal_wrapper allow_other("allow_other");
   fuseargv[fuseargcount+1]=allow_other;  //* allow all users to access the filesystem.
