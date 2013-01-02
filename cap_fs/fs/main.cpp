@@ -8,6 +8,30 @@
 #ifndef HAVE_SETXATTR
 #error "This filesystem depends on XATTR support."
 #endif
+#include <string.h>
+#include <exception>
+#include <stdlib.h>
+
+class string_literal_wrapper {
+    std::string mString;
+    char * mNonConst;
+    string_literal_wrapper(string_literal_wrapper const &);
+    string_literal_wrapper &operator=(string_literal_wrapper const &);
+  public:
+    string_literal_wrapper(const char * const cs):mString(cs),mNonConst(0) {
+       mNonConst=static_cast<char *>(calloc(mString.size()+1,1));
+       if (mNonConst == NULL) {
+         throw std::bad_alloc();
+       }
+    }
+    ~string_literal_wrapper() {
+       free(mNonConst);
+    }
+    operator char *() {
+       return strcpy(mNonConst,mString.c_str());
+    }
+};
+
 void *capfs_init(struct fuse_conn_info *conn) {
    return reinterpret_cast<void*>(new capfs::access::CapFsGuard("/minorfs/ac","FIXME:ThisShouldBeASecretSalt"));
 }
@@ -266,9 +290,13 @@ int main(int argc, char *argv[])
       fuseargv[1]=argv[1];
       fuseargcount=2;
   }
-  fuseargv[fuseargcount]="-o";     //After the argv[0] and optionaly a -d argument set some options:
-  fuseargv[fuseargcount+1]="allow_other";  //* allow all users to access the filesystem.
-  fuseargv[fuseargcount+2]="-s"; //Run the filesystem as single threaded.
-  fuseargv[fuseargcount+3]="/minorfs/cap";
+  string_literal_wrapper mino("-0");
+  fuseargv[fuseargcount]=mino;     //After the argv[0] and optionaly a -d argument set some options:
+  string_literal_wrapper allow_other("allow_other");
+  fuseargv[fuseargcount+1]=allow_other;  //* allow all users to access the filesystem.
+  string_literal_wrapper mins("-s");
+  fuseargv[fuseargcount+2]=mins; //Run the filesystem as single threaded.
+  string_literal_wrapper mountpoint("/minorfs/cap");
+  fuseargv[fuseargcount+3]=mountpoint;
   return fuse_main(4+fuseargcount, fuseargv, &capfs_oper,NULL);
 }
