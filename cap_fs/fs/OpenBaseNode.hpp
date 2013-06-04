@@ -30,6 +30,7 @@ namespace capfs {
 namespace fs {
 class OpenBaseNode {
     uint64_t mFh;
+    char *mFek;
   public:
     OpenBaseNode(uint64_t fh);
     int release();
