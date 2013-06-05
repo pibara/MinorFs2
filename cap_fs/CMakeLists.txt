@@ -57,7 +57,9 @@ set(capfs_SOURCES
         access/NoAccessFs.cpp
         algo/TripleHashLookup.cpp
         algo/TripleHashNode.cpp  
-        algo/TripleHashParentChild.cpp)
+        algo/TripleHashParentChild.cpp
+        crypto/Metrics.cpp
+        crypto/Buffer.cpp)
 add_executable(capfs ${capfs_SOURCES})
 #We need to link against the fuse library and the openssl crypto library.
 target_link_libraries(capfs fuse crypto)

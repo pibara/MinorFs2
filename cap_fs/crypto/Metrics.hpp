@@ -1,10 +1,13 @@
 #ifndef CAPFS_CRYPTO_METRICS
 #define CAPFS_CRYPTO_METRICS
+#include <sys/types.h>
+#include <unistd.h>
 namespace capfs {
   namespace crypto {
     class Metrics {
-        off_t offset;
-        size_t size;
+        size_t const mPreSize;
+        size_t const mPostSize;
+        off_t const mCtr;
        public:
         Metrics(off_t o,size_t s);
         size_t presize();
