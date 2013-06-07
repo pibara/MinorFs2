@@ -30,9 +30,14 @@
 #include <fcntl.h>
 namespace capfs {
 namespace fs {
-BaseNode::BaseNode():mAccess(false),mRelPath(""){}
-BaseNode::BaseNode(std::string relpath):mAccess(true),mRelPath(relpath){}
-BaseNode::BaseNode(capfs::algo::TripleHashParentChild pc):mAccess(true),mRelPath(""),mParentChild(pc){}
+BaseNode::BaseNode(OpenFileHandleCache const & fhc,
+               std::map<uint64_t,OpenBaseNode> const & opennodes):
+       mAccess(false),mRelPath(""),mFhc(fhc),mOpenNodes(opennodes){}
+BaseNode::BaseNode(std::string relpath,OpenFileHandleCache const & fhc,
+               std::map<uint64_t,OpenBaseNode> const & opennodes):
+       mAccess(true),mRelPath(relpath),mFhc(fhc),mOpenNodes(opennodes){}
+BaseNode::BaseNode(capfs::algo::TripleHashParentChild pc,OpenFileHandleCache const & fhc,
+               std::map<uint64_t,OpenBaseNode> const & opennodes):mAccess(true),mRelPath(""),mParentChild(pc),mFhc(fhc),mOpenNodes(opennodes){}
 int BaseNode::stat(struct stat *s) { 
   if (mAccess == false) {
     return -EPERM;

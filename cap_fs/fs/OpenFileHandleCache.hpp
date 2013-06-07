@@ -1,4 +1,4 @@
-//  Copyright (c) 2012, Rob J Meijer
+//  Copyright (c) 2013, Rob J Meijer
 //
 //Permission is hereby granted, free of charge, to any person or organization
 //obtaining a copy of the software and accompanying documentation covered by
@@ -21,25 +21,11 @@
 //FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
 //ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //DEALINGS IN THE SOFTWARE.
-#ifndef MINORFS_CAPFS_CAPFS_HPP
-#define MINORFS_CAPFS_CAPFS_HPP
-#include "BaseFs.hpp"
-#include "BaseNode.hpp"
-#include "OpenBaseNode.hpp"
-#include "OpenFileHandleCache.hpp"
-#include "../algo/TripleHashLookup.hpp"
-#include <string>
-#include <inttypes.h>
+#ifndef MINORFS_CAPFS_OPENFILEHANDLECACHE_HPP
+#define MINORFS_CAPFS_OPENFILEHANDLECACHE_HPP
 namespace capfs {
 namespace fs {
-class CapFs: public BaseFs {
-    capfs::algo::TripleHashLookup mThLookup;
-    OpenFileHandleCache mHandleCache;
-    std::map<uint64_t,OpenBaseNode> mOpenNodes;
-  public:
-    CapFs(std::string secretsalt);
-    BaseNode operator[](std::string relpath);
-    OpenBaseNode operator[](uint64_t fh);
+class OpenFileHandleCache {
 };
 }
 }

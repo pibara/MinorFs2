@@ -26,12 +26,16 @@
 #include "../fs/BaseFs.hpp"
 #include "../fs/BaseNode.hpp"
 #include "../fs/OpenBaseNode.hpp"
+#include "../fs/OpenFileHandleCache.hpp"
+#include <map>
 #include <string>
 #include <inttypes.h>
 namespace capfs {
 namespace access {
 //Filesystem abstraction that only gives access to the top level directory.
 class NoAccessFs: public capfs::fs::BaseFs {
+    fs::OpenFileHandleCache mHandleCache;
+    std::map<uint64_t,fs::OpenBaseNode> mOpenNodes;
   public:
     capfs::fs::BaseNode operator[](std::string relpath);
     capfs::fs::OpenBaseNode operator[](uint64_t fh);

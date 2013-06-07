@@ -12,6 +12,7 @@
 #include <exception>
 #include <stdlib.h>
 
+//A dumb wrapper for string literals used to keep compilers from complaning about constness issues.
 class string_literal_wrapper {
     std::string mString;
     char * mNonConst;
@@ -33,19 +34,26 @@ class string_literal_wrapper {
 };
 
 void *capfs_init(struct fuse_conn_info *conn) {
-   return reinterpret_cast<void*>(new capfs::access::CapFsGuard("/minorfs/ac","FIXME:ThisShouldBeASecretSalt"));
+   //The CapFsGuard takes the access-controll-filesystem as a first argument and a secret salt
+   //to be used by the capfs algoritm as a second. The CapFsGuard is a function object that returns 
+   //one of two BasFs references, one being the normal BaseFs and the second being a no-access BaseFs.
+   //The function object takes the fuse context process id and group id and uses these to determine what 
+   //BaseFs reference is returned. 
+   //FIXME: the hardcoded salt should be replaced by one from a secure source when possible.
+   return reinterpret_cast<void*>(new capfs::access::CapFsGuard("/minorfs/ac","ThisShouldBeASecretSalt"));
 }
 void capfs_destroy(void *capfsgvoid){
   capfs::access::CapFsGuard *capfsguard=reinterpret_cast<capfs::access::CapFsGuard *>(capfsgvoid);
   delete capfsguard;
 }
 
-int capfs_chown(const char *, uid_t, gid_t){ return -EPERM;}
-int capfs_utime(const char *, struct utimbuf *) { return -EPERM;}
-int capfs_setxattr(const char *, const char *, const char *, size_t, int) { return -EPERM;}
-int capfs_removexattr(const char *, const char *) { return -EPERM;}
-int capfs_utimens(const char *, const struct timespec tv[2]) { return -EPERM;}
+int capfs_chown(const char *, uid_t, gid_t){ return -EPERM;} //chown is never permited by capfs.
+int capfs_utime(const char *, struct utimbuf *) { return -EPERM;} //utime is never permitted by capfs.
+int capfs_setxattr(const char *, const char *, const char *, size_t, int) { return -EPERM;} //Setting extended attributes is never permitted by capfs.
+int capfs_removexattr(const char *, const char *) { return -EPERM;} //Removing extended attributes is never permitted by capfs.
+int capfs_utimens(const char *, const struct timespec tv[2]) { return -EPERM;} //utime is never permitted by capfs.
 
+//The folowing set of functions are mapped directly to the BaseFs returned by the CapFsGuard using a path to designate the apropriate node.
 int capfs_getattr(const char *p, struct stat *s) {
   struct fuse_context *context=fuse_get_context();
   capfs::access::CapFsGuard *capfsguard=reinterpret_cast<capfs::access::CapFsGuard *>(context->private_data);
@@ -143,6 +151,8 @@ int capfs_bmap(const char *p, size_t blocksize, uint64_t *idx){
   return capfs[p].bmap(blocksize,idx);
 }
 
+//The folowing set of functions are mapped directly to the BaseFs returned by the CapFsGuard, using a path to designate a node.
+//These calls return a file handle that can be used in other calls.
 int capfs_open(const char *p, struct fuse_file_info *finfo) {
   struct fuse_context *context=fuse_get_context();
   capfs::access::CapFsGuard *capfsguard=reinterpret_cast<capfs::access::CapFsGuard *>(context->private_data);
@@ -161,6 +171,8 @@ int capfs_opendir(const char *p, struct fuse_file_info *finfo){
   capfs::fs::BaseFs &capfs=(*capfsguard)(context->gid,context->pid);
   return capfs[p].opendir(&(finfo->fh));
 }
+//The folowing set of functions are mapped directly to the BaseFs returned by the CapFsGuard, using a file handle to designate a node.
+//The functions will result in the file handle being released
 int capfs_release(const char *, struct fuse_file_info *finfo) {
   struct fuse_context *context=fuse_get_context();
   capfs::access::CapFsGuard *capfsguard=reinterpret_cast<capfs::access::CapFsGuard *>(context->private_data);
@@ -173,7 +185,7 @@ int capfs_releasedir(const char *, struct fuse_file_info *finfo){
   capfs::fs::BaseFs &capfs= (*capfsguard)(context->gid,context->pid);
   return capfs[finfo->fh].releasedir();
 }
-
+//The folowing set of functions are mapped directly to the BaseFs returned by the CapFsGuard, using a file handle to designate a node.
 int capfs_read(const char *, char *b, size_t s, off_t o, struct fuse_file_info *finfo) {
   struct fuse_context *context=fuse_get_context();
   capfs::access::CapFsGuard *capfsguard=reinterpret_cast<capfs::access::CapFsGuard *>(context->private_data);

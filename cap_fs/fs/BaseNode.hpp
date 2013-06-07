@@ -30,6 +30,9 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include "../algo/TripleHashParentChild.hpp"
+#include "OpenFileHandleCache.hpp"
+#include "OpenBaseNode.hpp"
+#include <map>
 namespace capfs {
 namespace fs {
 class BaseNode;
@@ -37,10 +40,17 @@ class BaseNode {
     bool mAccess;
     std::string mRelPath;
     capfs::algo::TripleHashParentChild mParentChild;
+    OpenFileHandleCache const & mFhc;
+    std::map<uint64_t,OpenBaseNode>  const & mOpenNodes;
   public:
-    BaseNode();
-    BaseNode(std::string relpath);
-    BaseNode(capfs::algo::TripleHashParentChild pc);
+    BaseNode(OpenFileHandleCache const & fhc,
+               std::map<uint64_t,OpenBaseNode> const & opennodes);
+    BaseNode(std::string relpath,
+               OpenFileHandleCache const & fhc,
+               std::map<uint64_t,OpenBaseNode> const & opennodes);
+    BaseNode(capfs::algo::TripleHashParentChild pc,
+             OpenFileHandleCache const & fhc,
+             std::map<uint64_t,OpenBaseNode> const & opennodes);
     int stat(struct stat *s);
     int readlink(char *b, size_t l);
     int mknod(mode_t m, dev_t d); 

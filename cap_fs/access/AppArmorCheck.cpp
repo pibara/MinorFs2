@@ -29,6 +29,7 @@ namespace access {
 AppArmorCheck::AppArmorCheck(std::string acfsmp):mAcFsMountpoint(acfsmp){}
 
 bool AppArmorCheck::operator()(pid_t pid) {
+        //The access controll filesystem should return an error on stat of non app-armor confined process numbers.
         std::string acfspath=mAcFsMountpoint + "/" + std::to_string(pid);
         return (stat(acfspath.c_str(),&mStat)==0);          
 }

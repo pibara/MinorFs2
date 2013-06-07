@@ -28,12 +28,16 @@ namespace fs {
 CapFs::CapFs(std::string secretsalt):mThLookup(secretsalt) {}
 BaseNode CapFs::operator[](std::string relpath){
   if (relpath == "/") {
-    return BaseNode(relpath);
+    return BaseNode(relpath,mHandleCache,mOpenNodes);
   }
-  return BaseNode(mThLookup[relpath]);  
+  return BaseNode(mThLookup[relpath],mHandleCache,mOpenNodes);  
 }
 OpenBaseNode CapFs::operator[](uint64_t fh){
-  return OpenBaseNode(fh);
+  if (mOpenNodes.find(fh) != mOpenNodes.end()) {
+      return OpenBaseNode(fh,mHandleCache,mOpenNodes);
+  } else {
+      return OpenBaseNode(0,mHandleCache,mOpenNodes);
+  }
 }
 }
 }

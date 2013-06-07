@@ -6,15 +6,31 @@
 
 namespace capfs {
 namespace fs {
-OpenBaseNode::OpenBaseNode(uint64_t fh):mFh(fh){
+OpenBaseNode::OpenBaseNode(uint64_t fh,
+                           OpenFileHandleCache & fhc, 
+                           std::map<uint64_t,OpenBaseNode> & opennodes):
+                      mFh(fh),mFhc(fhc),mOpennodes(opennodes){
 }
 int OpenBaseNode::release(){ 
+  if (mFh == 0) { 
+    return -EBADF;
+  }
+  mOpennodes.erase(mFh);
+  mFh = 0;
   return 0;
 }
 int OpenBaseNode::releasedir(){ 
+  if (mFh == 0) {
+    return -EBADF;
+  }
+  mOpennodes.erase(mFh);
+  mFh = 0;
   return 0;
 }
 int OpenBaseNode::read(char *b, size_t s, off_t o){ 
+  if (mFh ==0) {
+    return -EBADF;
+  }
   //FIXME: function needs error handling.
   //Use a metrics helper for working with crypto blocks.
   capfs::crypto::Metrics metrics(o,s);
@@ -33,6 +49,9 @@ int OpenBaseNode::read(char *b, size_t s, off_t o){
   return buffer.read(b,s);
 }
 int OpenBaseNode::write(const char *b, size_t s, off_t o){ 
+  if (mFh ==0) {
+    return -EBADF;
+  }
   //FIXME: function needs error handling.
   capfs::crypto::Metrics metrics(o,s);
   size_t rawpresize = metrics.presize();
@@ -57,10 +76,16 @@ int OpenBaseNode::write(const char *b, size_t s, off_t o){
   ::write(mFh,buffer.encrypted(),buffer.size());
   return 0;
 }
-int OpenBaseNode::flush(){ 
+int OpenBaseNode::flush(){
+  if (mFh ==0) {
+    return -EBADF;
+  }
   return 0;
 }
 int OpenBaseNode::fsync(int isdatasync){ 
+  if (mFh ==0) {
+    return -EBADF;
+  }
   return 0;
 }
 int OpenBaseNode::readdir(void *buf, fuse_fill_dir_t filler, off_t offset){ 
@@ -72,21 +97,39 @@ int OpenBaseNode::readdir(void *buf, fuse_fill_dir_t filler, off_t offset){
   return -EPERM;
 }
 int OpenBaseNode::fsyncdir(int isdatasync){ 
+  if (mFh ==0) {
+    return -EBADF;
+  }
   return 0;
 }
 int OpenBaseNode::ftruncate(off_t l){
+  if (mFh ==0) {
+    return -EBADF;
+  }
   return 0;
 }
 int OpenBaseNode::fstat(struct stat *s){
+  if (mFh ==0) {
+    return -EBADF;
+  }
   return -EPERM;
 }
 int OpenBaseNode::lock(int cmd, struct flock *fl){
+  if (mFh ==0) {
+    return -EBADF;
+  }
   return -EPERM;
 }
 int OpenBaseNode::ioctl(int cmd, void *arg, unsigned int flags, void *data){
+  if (mFh ==0) {
+    return -EBADF;
+  }
   return -EPERM;
 }
 int OpenBaseNode::poll(fuse_pollhandle *ph, unsigned *reventsp){
+  if (mFh ==0) {
+    return -EBADF;
+  }
   return -EPERM;
 }
 }

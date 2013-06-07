@@ -26,12 +26,12 @@ namespace capfs {
 namespace access {
 capfs::fs::BaseNode NoAccessFs::operator[](std::string relpath){
   if (relpath == "/") {
-     return capfs::fs::BaseNode(relpath);
+     return capfs::fs::BaseNode(relpath,mHandleCache,mOpenNodes);
   }
-  return capfs::fs::BaseNode();
+  return capfs::fs::BaseNode(mHandleCache,mOpenNodes);
 }
 capfs::fs::OpenBaseNode NoAccessFs::operator[](uint64_t fh){
-  return capfs::fs::OpenBaseNode(fh);
+  return capfs::fs::OpenBaseNode(0,mHandleCache,mOpenNodes);
 }
 }
 }

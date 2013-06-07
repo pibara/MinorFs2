@@ -26,13 +26,18 @@
 #include <inttypes.h>
 #define FUSE_USE_VERSION 26
 #include <fuse.h>
+#include "OpenFileHandleCache.hpp"
+#include <map>
 namespace capfs {
 namespace fs {
+class OpenBaseNode;
 class OpenBaseNode {
     uint64_t mFh;
     char *mFek;
+    OpenFileHandleCache & mFhc;
+    std::map<uint64_t,OpenBaseNode> & mOpennodes;
   public:
-    OpenBaseNode(uint64_t fh);
+    OpenBaseNode(uint64_t fh,OpenFileHandleCache & fhc, std::map<uint64_t,OpenBaseNode> & opennodes);
     int release();
     int releasedir();
     int read(char *b, size_t s, off_t o);
