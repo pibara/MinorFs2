@@ -2,6 +2,8 @@
 #define OPENFILECOLLECTION_HPP
 #include <map>
 #include <deque>
+#include <stdint.h>
+#include <sys/types.h>
 template <typename nodeType,size_t maxOpenFiles>
 class openfilecollection {
     uint64_t mLastHandle;
@@ -16,7 +18,8 @@ class openfilecollection {
     }
     void tempCloseIfNeeded() {
         while (mFullyOpen.size() > maxOpenFiles) {
-            uint64_t candidate = mOpperQue.pop_front();
+            uint64_t candidate = mOpperQue.front();
+            mOpperQue.pop_front();
             if (mFullyOpen.count(candidate)) {
               mFullyOpen[candidate] -= 1;
               if (mFullyOpen[candidate] == 0) {
@@ -36,7 +39,7 @@ class openfilecollection {
           mFullyOpen[fh] = 1;
           mOpperQue.push_back(fh);
           this->tempCloseIfNeeded();
-          node.reOpen();
+          mCollection[fh].reOpen();
         }
         return mCollection[fh];
     }
@@ -50,9 +53,9 @@ class openfilecollection {
     }
     void close(uint64_t fh) {
         if (mFullyOpen.count(fh)) {
-            mCollection[fh].finalClose();
             mFullyOpen.erase(fh);
         }
+        mCollection[fh].finalClose();
         mCollection.erase(fh);
     }
 };
