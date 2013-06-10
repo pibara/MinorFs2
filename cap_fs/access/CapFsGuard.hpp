@@ -24,11 +24,14 @@
 #ifndef MINORFS_CAPFS_GUARD_HPP
 #define MINORFS_CAPFS_GUARD_HPP
 #include "../fs/CapFs.hpp"
+#include "../fs/OpenBaseNode.hpp"
 #include "NoAccessFs.hpp"
 #include "AppArmorCheck.hpp"
 #include <sys/types.h>
 #include <grp.h>
 #include <unistd.h>
+#include "../../util/openfilecollection.hpp"
+typedef openfilecollection<capfs::fs::OpenBaseNode,960,4096> openfilecollectiontype;
 namespace capfs {
 namespace access {
 //This class guards access to the CapFs filesystem so that:
@@ -45,6 +48,8 @@ class CapFsGuard {
     NoAccessFs mNoAccess;
     //The CapFs filesystem. This is exposed to confined processes and high level minorfs filesystems.
     capfs::fs::CapFs  mAccess;
+    //Container for open files that is shared between access and no_access fs
+    openfilecollectiontype mOpenFileCollection;
     //Static helper function for looking up mMinorFsGid
     static gid_t getgrnamgid();
   public:

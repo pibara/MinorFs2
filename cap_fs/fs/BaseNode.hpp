@@ -40,17 +40,10 @@ class BaseNode {
     bool mAccess;
     std::string mRelPath;
     capfs::algo::TripleHashParentChild mParentChild;
-    OpenFileHandleCache const & mFhc;
-    std::map<uint64_t,OpenBaseNode>  const & mOpenNodes;
   public:
-    BaseNode(OpenFileHandleCache const & fhc,
-               std::map<uint64_t,OpenBaseNode> const & opennodes);
-    BaseNode(std::string relpath,
-               OpenFileHandleCache const & fhc,
-               std::map<uint64_t,OpenBaseNode> const & opennodes);
-    BaseNode(capfs::algo::TripleHashParentChild pc,
-             OpenFileHandleCache const & fhc,
-             std::map<uint64_t,OpenBaseNode> const & opennodes);
+    BaseNode();
+    BaseNode(std::string relpath);
+    BaseNode(capfs::algo::TripleHashParentChild pc);
     int stat(struct stat *s);
     int readlink(char *b, size_t l);
     int mknod(mode_t m, dev_t d); 

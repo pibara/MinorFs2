@@ -6,16 +6,19 @@
 
 namespace capfs {
 namespace fs {
-OpenBaseNode::OpenBaseNode(uint64_t fh,
-                           OpenFileHandleCache & fhc, 
-                           std::map<uint64_t,OpenBaseNode> & opennodes):
-                      mFh(fh),mFhc(fhc),mOpennodes(opennodes){
-}
+OpenBaseNode::OpenBaseNode(){}
+OpenBaseNode::OpenBaseNode(uint64_t fh):mFh(fh){}
+
+void OpenBaseNode::lowLevelClose() {}
+void OpenBaseNode::lowLevelOpen() {}
+void OpenBaseNode::preOpen(){}
+void OpenBaseNode::postClose(){}
+
 int OpenBaseNode::release(){ 
   if (mFh == 0) { 
     return -EBADF;
   }
-  mOpennodes.erase(mFh);
+  //mOpennodes.erase(mFh);
   mFh = 0;
   return 0;
 }
@@ -23,7 +26,7 @@ int OpenBaseNode::releasedir(){
   if (mFh == 0) {
     return -EBADF;
   }
-  mOpennodes.erase(mFh);
+  //mOpennodes.erase(mFh);
   mFh = 0;
   return 0;
 }

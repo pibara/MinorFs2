@@ -34,10 +34,13 @@ class OpenBaseNode;
 class OpenBaseNode {
     uint64_t mFh;
     char *mFek;
-    OpenFileHandleCache & mFhc;
-    std::map<uint64_t,OpenBaseNode> & mOpennodes;
   public:
-    OpenBaseNode(uint64_t fh,OpenFileHandleCache & fhc, std::map<uint64_t,OpenBaseNode> & opennodes);
+    OpenBaseNode();
+    OpenBaseNode(uint64_t fh);
+    void lowLevelClose();
+    void lowLevelOpen();
+    void preOpen();
+    void postClose();
     int release();
     int releasedir();
     int read(char *b, size_t s, off_t o);
