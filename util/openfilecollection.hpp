@@ -92,14 +92,15 @@ class openfilecollection {
         return mCollection[fh]; //Return our open file node by reference.
     }
     //This method adds a new node to the container and does both a high level and low level open.
-    uint64_t open(nodeType &node) {
+    uint64_t open(nodeType node) {
         uint64_t fh=this->getFreeFhNumber(); //Get a new fh number.
-        mCollection[fh] = node; //Add the node to our container under the new fh.
+        mCollection.insert(std::pair<uint64_t, nodeType>(fh,std::move(node))); //Add the node to our container under the new fh.
+        //mCollection[fh] = node; //Add the node to our container under the new fh.
         mFullyOpen[fh] = 1; //Set the queue occurence count to one.
         mOpperQue.push_back(fh); //and add the file handle to the event queue.
         this->tempCloseIfNeeded(); //Before opening the new file, make sure we don't exeed the maximum number of open files.
-        node.preOpen(); //Do any high-level one-time initialization.
-        node.lowLevelOpen(); //Do the low level file open.
+        mCollection[fh].preOpen(); //Do any high-level one-time initialization.
+        mCollection[fh].lowLevelOpen(); //Do the low level file open.
         return fh; //Return our brand new high-level open file handle.
     }
     //Method for explicit high-level closing of a file node.

@@ -1,24 +1,37 @@
 #include "openfilecollection.hpp"
 #include <iostream>
+#include <vector>
 class Node {
     int mNum;
   public:
     Node():mNum(0){
-        //std::cout << "constructor 0" << std::endl;
+        std::cout << "OOPS: constructor 0" << std::endl;
     }
     Node(int num):mNum(num){
-        //std::cout << "constructor " << num << std::endl;
+        std::cout << "constructor " << num << std::endl;
     }
     Node(Node const & n):mNum(n.mNum){
-        //std::cout << "copy constructor " << mNum << std::endl;
+        std::cout << "copy constructor " << mNum << std::endl;
+    }
+    Node(Node&& n):mNum(n.mNum){
+        std::cout << "move constructor " << mNum << std::endl;
+        n.mNum=0;
     }
     Node & operator=(Node const & n) {
       mNum = n.mNum;
-      //std::cout << "assignment " << mNum << std::endl;
+      std::cout << "assignment " << mNum << std::endl;
+      return *this;
+    }
+    Node& operator=(Node&& n) {
+      mNum = n.mNum;
+      std::cout << "move assignment " << mNum << std::endl;
+      n.mNum=0;
       return *this;
     }
     ~Node() {
-      //std::cout << "Destructor " << mNum << std::endl;
+      if (mNum) {
+        std::cout << "Destructor " << mNum << std::endl;
+      }
     }
     void preOpen() { std::cout << "preOpen " << mNum << std::endl;}
     void lowLevelClose() { std::cout << "lowLevelClose " <<  mNum << std::endl;}
@@ -28,22 +41,14 @@ class Node {
 
 int main(int argc,char **argv) {
    openfilecollection<Node,4,1000> coll;
-   Node n1(1);
-   Node n2(2);
-   Node n3(3);
-   Node n4(4);
-   Node n5(5);
-   Node n6(6);
-   uint64_t fh1=coll.open(n1); 
-   uint64_t fh2=coll.open(n2);
-   uint64_t fh3=coll.open(n3);
-   uint64_t fh4=coll.open(n4);
-   uint64_t fh5=coll.open(n5);
-   uint64_t fh6=coll.open(n6);
-   Node n7=coll[fh1];
-   Node n8=coll[fh5];
-   coll.close(fh1);
-   coll.close(fh3);
-   coll.close(fh5);
+   std::vector<uint64_t> fhs(6);
+   for (int index=0; index < 6; ++index) {
+      fhs[index]=coll.open(Node(index + 1));
+   }
+   Node & n7=coll[fhs[0]];
+   Node & n8=coll[fhs[4]];
+   coll.close(fhs[0]);
+   coll.close(fhs[2]);
+   coll.close(fhs[4]);
    return 0;
 }
