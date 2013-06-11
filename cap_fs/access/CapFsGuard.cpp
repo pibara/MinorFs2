@@ -31,7 +31,7 @@ gid_t CapFsGuard::getgrnamgid() {
       }
       return 0;
 }
-CapFsGuard::CapFsGuard(std::string acpath,std::string secretsalt):mMinorFsGid(getgrnamgid()),mAppArmorConfined(acpath),mAccess(secretsalt){}
+CapFsGuard::CapFsGuard(std::string acpath,std::string secretsalt):mMinorFsGid(getgrnamgid()),mAppArmorConfined(acpath),mAccess(secretsalt,mOpenFileCollection),mNoAccess(mOpenFileCollection){}
 
 capfs::fs::BaseFs & CapFsGuard::operator()(gid_t gid,pid_t pid) {
        if ((gid == mMinorFsGid) || mAppArmorConfined(pid)) {

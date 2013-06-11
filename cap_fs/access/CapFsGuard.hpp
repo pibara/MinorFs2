@@ -31,7 +31,6 @@
 #include <grp.h>
 #include <unistd.h>
 #include "../../util/openfilecollection.hpp"
-typedef openfilecollection<capfs::fs::OpenBaseNode,960,4096> openfilecollectiontype;
 namespace capfs {
 namespace access {
 //This class guards access to the CapFs filesystem so that:

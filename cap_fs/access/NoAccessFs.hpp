@@ -23,7 +23,7 @@
 //DEALINGS IN THE SOFTWARE.
 #ifndef MINORFS_CAPFS_NOACCESSFS_HPP
 #define MINORFS_CAPFS_NOACCESSFS_HPP
-#include "CapFsGuard.hpp"
+#include "../../util/openfilecollection.hpp"
 #include "../fs/BaseFs.hpp"
 #include "../fs/BaseNode.hpp"
 #include "../fs/OpenBaseNode.hpp"
@@ -31,7 +31,6 @@
 #include <map>
 #include <string>
 #include <inttypes.h>
-typedef openfilecollection<capfs::fs::OpenBaseNode,960,4096> openfilecollectiontype;
 namespace capfs {
 namespace access {
 //Filesystem abstraction that only gives access to the top level directory.

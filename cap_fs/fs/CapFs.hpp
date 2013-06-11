@@ -26,18 +26,17 @@
 #include "BaseFs.hpp"
 #include "BaseNode.hpp"
 #include "OpenBaseNode.hpp"
-#include "OpenFileHandleCache.hpp"
 #include "../algo/TripleHashLookup.hpp"
-#include "../access/CapFsGuard.hpp"
 #include <string>
 #include <inttypes.h>
+#include "../../util/openfilecollection.hpp"
 namespace capfs {
 namespace fs {
 class CapFs: public BaseFs {
     capfs::algo::TripleHashLookup mThLookup;
-    openfilecollectiontype &mOpenFileColCol;
+    openfilecollectiontype &mOpenFileCol;
   public:
-    CapFs(std::string secretsalt,openfilecollectiontype &);
+    CapFs(std::string secretsalt,openfilecollectiontype &fhc);
     BaseNode operator[](std::string relpath);
     OpenBaseNode operator[](uint64_t fh);
 };

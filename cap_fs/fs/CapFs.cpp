@@ -22,12 +22,10 @@
 //ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //DEALINGS IN THE SOFTWARE.
 #include "CapFs.hpp"
-#include "../access/CapFsGuard.hpp"
 
 namespace capfs {
 namespace fs {
-CapFs::CapFs(std::string secretsalt):mThLookup(secretsalt,openfilecollectiontype &ofc):
-    mOpenFileColCol(ofc) {}
+CapFs::CapFs(std::string secretsalt, openfilecollectiontype &ofc):mThLookup(secretsalt),mOpenFileCol(ofc) {}
 
 BaseNode CapFs::operator[](std::string relpath){
   if (relpath == "/") {
