@@ -23,7 +23,7 @@
 //DEALINGS IN THE SOFTWARE.
 #ifndef MINORFS_CAPFS_NOACCESSFS_HPP
 #define MINORFS_CAPFS_NOACCESSFS_HPP
-#include "../../util/openfilecollection.hpp"
+#include "../fs/openfilecollectiontype.hpp"
 #include "../fs/BaseFs.hpp"
 #include "../fs/BaseNode.hpp"
 #include "../fs/OpenBaseNode.hpp"

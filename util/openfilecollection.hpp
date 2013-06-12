@@ -27,7 +27,6 @@
 #include <deque>
 #include <stdint.h>
 #include <sys/types.h>
-#include "../cap_fs/fs/OpenBaseNode.hpp"
 //This template is meant as a generic container for node objects.
 //A node object needs to have the following zero argument void methods defined:
 //  * preOpen()
@@ -141,5 +140,4 @@ class openfilecollection {
     }
 };
 
-typedef openfilecollection<capfs::fs::OpenBaseNode,960,4096> openfilecollectiontype;
 #endif

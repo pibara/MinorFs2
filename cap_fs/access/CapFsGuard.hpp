@@ -30,7 +30,7 @@
 #include <sys/types.h>
 #include <grp.h>
 #include <unistd.h>
-#include "../../util/openfilecollection.hpp"
+#include "../fs/openfilecollectiontype.hpp"
 namespace capfs {
 namespace access {
 //This class guards access to the CapFs filesystem so that:

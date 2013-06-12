@@ -1,4 +1,4 @@
-//  Copyright (c) 2012, Rob J Meijer
+//  Copyright (c) 2013, Rob J Meijer
 //
 //Permission is hereby granted, free of charge, to any person or organization
 //obtaining a copy of the software and accompanying documentation covered by
@@ -21,25 +21,9 @@
 //FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
 //ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //DEALINGS IN THE SOFTWARE.
-#ifndef MINORFS_CAPFS_CAPFS_HPP
-#define MINORFS_CAPFS_CAPFS_HPP
-#include "BaseFs.hpp"
-#include "BaseNode.hpp"
+#ifndef OPENFILECOLLECTIONTYPE_HPP
+#define OPENFILECOLLECTIONTYPE_HPP
+#include "../../util/openfilecollection.hpp"
 #include "OpenBaseNode.hpp"
-#include "../algo/TripleHashLookup.hpp"
-#include <string>
-#include <inttypes.h>
-#include "../fs/openfilecollectiontype.hpp"
-namespace capfs {
-namespace fs {
-class CapFs: public BaseFs {
-    capfs::algo::TripleHashLookup mThLookup;
-    openfilecollectiontype &mOpenFileCol;
-  public:
-    CapFs(std::string secretsalt,openfilecollectiontype &fhc);
-    BaseNode operator[](std::string relpath);
-    OpenBaseNode operator[](uint64_t fh);
-};
-}
-}
+typedef openfilecollection<capfs::fs::OpenBaseNode,960,4096> openfilecollectiontype;
 #endif
