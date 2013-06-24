@@ -26,7 +26,6 @@
 #include <inttypes.h>
 #define FUSE_USE_VERSION 26
 #include <fuse.h>
-#include "OpenFileHandleCache.hpp"
 #include <map>
 #include <string>
 namespace capfs {

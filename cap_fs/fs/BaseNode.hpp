@@ -30,7 +30,6 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include "../algo/TripleHashParentChild.hpp"
-#include "OpenFileHandleCache.hpp"
 #include "OpenBaseNode.hpp"
 #include <map>
 namespace capfs {

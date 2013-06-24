@@ -27,7 +27,6 @@
 #include "../fs/BaseFs.hpp"
 #include "../fs/BaseNode.hpp"
 #include "../fs/OpenBaseNode.hpp"
-#include "../fs/OpenFileHandleCache.hpp"
 #include <map>
 #include <string>
 #include <inttypes.h>

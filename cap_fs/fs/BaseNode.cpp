@@ -35,6 +35,7 @@ BaseNode::BaseNode():
 BaseNode::BaseNode(std::string relpath):
        mAccess(true),mRelPath(relpath){}
 BaseNode::BaseNode(capfs::algo::TripleHashParentChild pc):mAccess(true),mRelPath(""),mParentChild(pc){}
+
 int BaseNode::stat(struct stat *s) { 
   if (mAccess == false) {
     return -EPERM;
@@ -75,6 +76,7 @@ int BaseNode::stat(struct stat *s) {
   }
   return -ENOENT;  
 }
+
 int BaseNode::chmod(mode_t m) {
   if (mAccess == false) {
     return -EPERM;
