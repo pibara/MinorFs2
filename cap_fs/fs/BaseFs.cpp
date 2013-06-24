@@ -22,6 +22,7 @@
 //ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //DEALINGS IN THE SOFTWARE.
 #include "BaseFs.hpp"
+#include "OpenBaseNode.hpp"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -29,6 +30,20 @@
 #include <sys/vfs.h>
 namespace capfs {
 namespace fs {
+BaseFs::BaseFs(openfilecollectiontype &openfcol):mOpenFileCol(openfcol) {}
+
+OpenBaseNode BaseFs::operator[](uint64_t fh){
+    return mOpenFileCol[fh];
+}
+
+uint64_t BaseFs::open(OpenBaseNode node) {
+    return mOpenFileCol.open(node);
+}
+
+void BaseFs::close(uint64_t fh) {
+    mOpenFileCol.close(fh);
+}
+
 int BaseFs::statfs(struct statvfs *fst){ 
     struct statvfs st;
     int rv = statvfs("/var/minorfs/data",&st);

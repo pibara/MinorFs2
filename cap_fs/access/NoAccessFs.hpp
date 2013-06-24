@@ -35,11 +35,9 @@ namespace capfs {
 namespace access {
 //Filesystem abstraction that only gives access to the top level directory.
 class NoAccessFs: public capfs::fs::BaseFs {
-    openfilecollectiontype &mOpenFileColCol;
   public:
     NoAccessFs(openfilecollectiontype &);
     capfs::fs::BaseNode operator[](std::string relpath);
-    capfs::fs::OpenBaseNode operator[](uint64_t fh);
 };
 }
 }

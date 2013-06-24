@@ -28,15 +28,19 @@
 #include <fuse.h>
 #include "OpenFileHandleCache.hpp"
 #include <map>
+#include <string>
 namespace capfs {
 namespace fs {
 class OpenBaseNode;
 class OpenBaseNode {
-    uint64_t mFh;
-    char *mFek;
+    int mFh;
+    std::string mRawPath;
+    char mFek[32];
+    int mFlags;
+    mode_t mMode;
   public:
     OpenBaseNode();
-    OpenBaseNode(uint64_t fh);
+    OpenBaseNode(std::string mRawPath, char *mFek,int flags, mode_t mode);
     void lowLevelClose();
     void lowLevelOpen();
     void preOpen();

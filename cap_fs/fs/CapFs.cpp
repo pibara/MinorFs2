@@ -25,20 +25,13 @@
 
 namespace capfs {
 namespace fs {
-CapFs::CapFs(std::string secretsalt, openfilecollectiontype &ofc):mThLookup(secretsalt),mOpenFileCol(ofc) {}
+CapFs::CapFs(std::string secretsalt, openfilecollectiontype &ofc):BaseFs(ofc),mThLookup(secretsalt) {}
 
 BaseNode CapFs::operator[](std::string relpath){
   if (relpath == "/") {
     return BaseNode(relpath);
   }
   return BaseNode(mThLookup[relpath]);  
-}
-OpenBaseNode CapFs::operator[](uint64_t fh){
-//  if (mOpenNodes.find(fh) != mOpenNodes.end()) {
-//      return OpenBaseNode(fh);
-//  } else {
-      return OpenBaseNode(0);
-//  }
 }
 }
 }

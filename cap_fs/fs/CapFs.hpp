@@ -34,11 +34,9 @@ namespace capfs {
 namespace fs {
 class CapFs: public BaseFs {
     capfs::algo::TripleHashLookup mThLookup;
-    openfilecollectiontype &mOpenFileCol;
   public:
     CapFs(std::string secretsalt,openfilecollectiontype &fhc);
     BaseNode operator[](std::string relpath);
-    OpenBaseNode operator[](uint64_t fh);
 };
 }
 }
