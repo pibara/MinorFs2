@@ -27,13 +27,20 @@
 #include "OpenBaseNode.hpp"
 #include <string>
 #include <inttypes.h>
+#include "openfilecollectiontype.hpp"
 namespace capfs {
 namespace fs {
 class BaseFs {
+  private:
+    openfilecollectiontype mOpenFileCol;
+  protected:
+    uint64_t open(OpenBaseNode node);
   public:
+    void close(uint64_t fh);
+    BaseFs();
     virtual ~BaseFs() {} 
+    OpenBaseNode operator[](uint64_t fh);
     virtual BaseNode operator[](std::string relpath)=0;
-    virtual OpenBaseNode operator[](uint64_t fh)=0;
     int statfs(struct statvfs *s);
 };
 }

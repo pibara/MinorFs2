@@ -3,16 +3,30 @@
 #include "../crypto/Metrics.hpp"
 #include <errno.h>
 #include <unistd.h>
-
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <string.h>
 namespace capfs {
 namespace fs {
-OpenBaseNode::OpenBaseNode(){}
-OpenBaseNode::OpenBaseNode(uint64_t fh):mFh(fh){}
+OpenBaseNode::OpenBaseNode():mFh(0),mRawPath(""){
+    memset(mFek,0,32);
+}
+OpenBaseNode::OpenBaseNode(std::string rawpath, char *fek,int flags, mode_t mode):mFh(0),mRawPath(rawpath),mFlags(flags),mMode(mode){
+    memcpy(mFek,fek,32);    
+}
 
-void OpenBaseNode::lowLevelClose() {}
-void OpenBaseNode::lowLevelOpen() {}
+void OpenBaseNode::lowLevelClose() {
+    ::close(mFh);
+    mFh=0;
+}
+void OpenBaseNode::lowLevelOpen() {
+    mFh = ::open(mRawPath.c_str(),mFlags,mMode);
+}
 void OpenBaseNode::preOpen(){}
-void OpenBaseNode::postClose(){}
+void OpenBaseNode::postClose(){
+     memset(mFek,0,32);
+}
 
 int OpenBaseNode::release(){ 
   if (mFh == 0) { 

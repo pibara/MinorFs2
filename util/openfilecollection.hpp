@@ -39,6 +39,7 @@
 //  * The maximum size of the internal event queue.
 template <typename nodeType,size_t maxOpenFiles,size_t maxQueueSize>
 class openfilecollection {
+    nodeType mNull;
     uint64_t mLastHandle; //Used for determinign the unique file handle. 
     std::map<uint64_t, nodeType> mCollection; //The collection ov virtually open file nodes.
     std::map<uint64_t, size_t> mFullyOpen; //A map holding the event count for each low-level open file node mentioned 
@@ -87,7 +88,7 @@ class openfilecollection {
     openfilecollection(openfilecollection const &); //Copy constructor declared private -> no copy.
     openfilecollection &operator=(openfilecollection const &); //assignment declared provate -> no copy.
   public:
-    openfilecollection():mLastHandle(0){} //Constructor initializes the mLastHandle value.
+    openfilecollection():mNull(),mLastHandle(0){} //Constructor initializes the mLastHandle value.
     ~openfilecollection() { 
        //Destructor will close any low level open file node.
        for (std::map<uint64_t, size_t>::iterator   i1=mFullyOpen.begin();  i1 != mFullyOpen.end(); ++i1) {
@@ -101,6 +102,9 @@ class openfilecollection {
     }
     //Operator for accessing the file node object. This operator will return a low-level opened file object.
     nodeType & operator[](uint64_t fh) {
+        if (mCollection.count(fh) == 0) {
+            return mNull;
+        }
         if (mFullyOpen.count(fh)) { //If the file node is already low-level open:
           if (fh != mOpperQue.back()) { // If adding the operation to the queue won't result in a duplicate:
             mFullyOpen[fh] += 1;   //Update the occurence count

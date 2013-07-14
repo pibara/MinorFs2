@@ -45,7 +45,7 @@ OpenBaseNode CapFs::operator[](uint64_t fh){
 //  if (mOpenNodes.find(fh) != mOpenNodes.end()) {
 //      return OpenBaseNode(fh);
 //  } else {
-      return OpenBaseNode(0);
+      return OpenBaseNode();
 //  }
 }
 gid_t CapFs::getCreatorGid() {
