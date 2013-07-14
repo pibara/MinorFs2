@@ -53,9 +53,6 @@ set(capfs_SOURCES
         fs/CapFs.cpp
         fs/main.cpp
         fs/OpenBaseNode.cpp
-        access/AppArmorCheck.cpp
-        access/CapFsGuard.cpp 
-        access/NoAccessFs.cpp
         algo/TripleHashLookup.cpp
         algo/TripleHashNode.cpp  
         algo/TripleHashParentChild.cpp

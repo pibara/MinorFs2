@@ -34,11 +34,13 @@ namespace capfs {
 namespace fs {
 class CapFs: public BaseFs {
     capfs::algo::TripleHashLookup mThLookup;
-    openfilecollectiontype &mOpenFileCol;
+    openfilecollectiontype mOpenFileCol;
+    gid_t mCreatorGid;
   public:
-    CapFs(std::string secretsalt,openfilecollectiontype &fhc);
+    CapFs(std::string secretsalt);
     BaseNode operator[](std::string relpath);
     OpenBaseNode operator[](uint64_t fh);
+    gid_t getCreatorGid();
 };
 }
 }

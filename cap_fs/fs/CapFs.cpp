@@ -21,11 +21,19 @@
 //FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
 //ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 //DEALINGS IN THE SOFTWARE.
+#include <sys/types.h>
+#include <grp.h>
+#include <unistd.h>
 #include "CapFs.hpp"
 
 namespace capfs {
 namespace fs {
-CapFs::CapFs(std::string secretsalt, openfilecollectiontype &ofc):mThLookup(secretsalt),mOpenFileCol(ofc) {}
+CapFs::CapFs(std::string secretsalt):mThLookup(secretsalt),mCreatorGid(0) {
+  struct group *grp=getgrnam("minorfs");
+  if (grp) {
+     mCreatorGid=grp->gr_gid;
+  }
+}
 
 BaseNode CapFs::operator[](std::string relpath){
   if (relpath == "/") {
@@ -39,6 +47,9 @@ OpenBaseNode CapFs::operator[](uint64_t fh){
 //  } else {
       return OpenBaseNode(0);
 //  }
+}
+gid_t CapFs::getCreatorGid() {
+    return mCreatorGid;
 }
 }
 }
