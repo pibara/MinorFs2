@@ -17,15 +17,27 @@ class padded_blockfile {
         tailcount = (32 - (realsz % 32)) % 32;
         realsz += tailcount;
         off_t basectr=realoff/32;
-        for (size_t blockno=0; blockno < (realsz / 32);blockno++) {
-            mFile.lseek(realoff + 32 * blockno,SEEK_SET);
-            mfile.read(block,32);
-            size_t frontpaddingno = off - realoff;
-            size_t endpaddingno = 
-            size_t skipend=0;
-            mCtrCrypto.decrypt(block,basectr+blockno);
-            //fixme    
+        off_t blockcount = realsz / 32;
+        //FIXME: logic using paddingcount file mode bits (03070 -> 037)
+        for (size_t blockno=0; blockno < blockcount;blockno++) {
+            off_t blockoffset = realoff + 32 * blockno;
+            //Dont decrypt past end of file, don't decrypt sparse.
+            if ((blockoffset < mCursize) and (mFile.lseek(blockoffset,SEEK_DATA) == blockoffset)) {
+                mFile.lseek(blockoffset,SEEK_SET);
+                mfile.read(block,32);
+                off_t ctr = basectr+blockno;
+                mCtrCrypto.crypt(block,ctr);
+            } else {
+                memset(block,0,32);
+            }
+            //Copy decrypted block into buffer
+            off_t frontskip = (blockno == 0) ?  frontcount : 0;
+            off_t backskip = (blockcount - blockno == 1) ? tailcount : 0;
+            off_t movesize = 32 - frontskip - backskip;
+            strncpy(buffer + blockoffset - off + frontskip, block+frontskip,movesize);
+
         } 
+        //FIXME: exceptions and return values
     }
     write(char *buffer, size_t sz, off_t off) {
 
