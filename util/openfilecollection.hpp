@@ -29,10 +29,8 @@
 #include <sys/types.h>
 //This template is meant as a generic container for node objects.
 //A node object needs to have the following zero argument void methods defined:
-//  * preOpen()
 //  * lowLevelClose()  
 //  * lowLevelOpen()
-//  * postClose()
 //The template takes 3 arguments:
 //  * The type of the node to be used.
 //  * The maximum number of low level file objects that we can keep open at the same time.
@@ -95,10 +93,6 @@ class openfilecollection {
            uint64_t fh = i1->first;
            mCollection[fh].lowLevelClose();
        }
-       //After the low-level close, the destructor also will call the post close method.
-       for (typename std::map<uint64_t, nodeType >::iterator i2=mCollection.begin(); i2 != mCollection.end(); ++i2) {
-           i2->second.postClose();
-       }
     }
     //Operator for accessing the file node object. This operator will return a low-level opened file object.
     nodeType & operator[](uint64_t fh) {
@@ -126,7 +120,6 @@ class openfilecollection {
         mFullyOpen[fh] = 1; //Set the queue occurence count to one.
         mOpperQue.push_back(fh); //and add the file handle to the event queue.
         this->tempCloseIfNeeded(); //Before opening the new file, make sure we don't exeed the maximum number of open files.
-        mCollection[fh].preOpen(); //Do any high-level one-time initialization.
         mCollection[fh].lowLevelOpen(); //Do the low level file open.
         return fh; //Return our brand new high-level open file handle.
     }
@@ -137,8 +130,6 @@ class openfilecollection {
             mFullyOpen.erase(fh);
             mCollection[fh].lowLevelClose();
         }
-        //Perform any high-level cleanup tasks on the file node.
-        mCollection[fh].postClose();
         //Drop from our high-level collection.
         mCollection.erase(fh);
     }

@@ -3,40 +3,66 @@
 #include <vector>
 class Node {
     int mNum;
+    bool mValid;
+    bool mOpen;
   public:
-    Node():mNum(0){
-        std::cout << "OOPS: constructor 0" << std::endl;
-    }
-    Node(int num):mNum(num){
+    Node(Node const &) = delete;
+    Node & operator=(Node const & n) = delete; 
+    Node& operator=(Node&& n) = delete;
+    Node():mNum(0),mValid(false),mOpen(false){}
+    /*Constructor for the null node*/
+    Node(int num):mNum(num),mValid(true),mOpen(false){
         std::cout << "constructor " << num << std::endl;
     }
-    Node(Node const & n):mNum(n.mNum){
-        std::cout << "copy constructor " << mNum << std::endl;
+    /*Move constructor*/
+    Node(Node&& n):mNum(n.mNum),mValid(n.mValid),mOpen(n.mOpen){
+        if (&n != this) {
+          if (mValid) {
+            n.mValid=false;
+          } else {
+            std::cout << "BOGUS use of move constructor " << mNum << std::endl;
+          }
+        } else {
+           std::cout << "BOGUS self assignment in move constructor " << mNum << std::endl;
+        }
     }
-    Node(Node&& n):mNum(n.mNum){
-        std::cout << "move constructor " << mNum << std::endl;
-        n.mNum=0;
-    }
-    Node & operator=(Node const & n) {
-      mNum = n.mNum;
-      std::cout << "assignment " << mNum << std::endl;
-      return *this;
-    }
-    Node& operator=(Node&& n) {
-      mNum = n.mNum;
-      std::cout << "move assignment " << mNum << std::endl;
-      n.mNum=0;
-      return *this;
-    }
+    /*Destructor*/
     ~Node() {
       if (mNum) {
-        std::cout << "Destructor " << mNum << std::endl;
+        if (mValid) {
+          if (mOpen) {
+             std::cout << "Destructor of open node " << mNum << std::endl;
+             this->lowLevelClose();
+          } else {
+              std::cout << "Destructor of closed node " << mNum << std::endl;
+          }
+        }
       }
     }
-    void preOpen() { std::cout << "preOpen " << mNum << std::endl;}
-    void lowLevelClose() { std::cout << "lowLevelClose " <<  mNum << std::endl;}
-    void lowLevelOpen() {std::cout << "lowLevelOpen " <<  mNum << std::endl;}
-    void postClose() {std::cout << "postClose " <<  mNum << std::endl;}
+    void lowLevelClose() { 
+       if (mValid) {
+         if (mOpen) {
+           std::cout << "lowLevelClose of open node " <<  mNum << std::endl;
+           mOpen=false;
+         } else {
+           std::cout << "lowLevelClose of closed node " <<  mNum << std::endl;
+         }
+       } else {
+          std::cout << "BOGUS lowLevelClose of invalidated node" <<  mNum << std::endl;
+       }
+    }
+    void lowLevelOpen() {
+       if (mValid) {
+         if (mOpen) {
+           std::cout << "BOGUS lowLevelOpen of open node " <<  mNum << std::endl;
+         } else {
+           std::cout << "lowLevelOpen " <<  mNum << std::endl;
+           mOpen=true;
+         }
+       } else {
+          std::cout << "BOGUS lowLevelOpen of invalidated node" <<  mNum << std::endl;
+       }
+    }
 };
 
 int main(int argc,char **argv) {
