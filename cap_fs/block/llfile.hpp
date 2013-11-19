@@ -10,21 +10,23 @@
 #include <system_error>
 
 typedef enum {nodetype_unknown,data_file,exe_file,directory,symbolic_link} node_type;
-typedef enum {ll_closed,ll_open,ll_tempclosed} node_state;
+typedef enum {ll_closed,ll_open,ll_tempclosed,ll_invalidated} node_state;
 
 class llfile {
     int mFd;
     std::string mFilePath;
     node_type mNtype;
+    node_state mState;
     int mOpenFlags;
     int mReOpenFlags;
-    llfile(open_file const &);
-    llfile const & operator=(open_file const &);
   public:
+    llfile(llfile const &)=delete;
+    llfile & operator=(llfile const &) = delete;
+    llfile& operator=(llfile &&) = delete;
+    llfile(); 
     llfile(std::string filename,node_type ntype,int flags);
+    llfile(llfile&& n);
     ~llfile();
-    void preOpen(std::string filename,node_type ntype,int flags);
-    void void postClose();
     void lowLevelOpen();
     void lowLevelClose(); 
     ssize_t read(void *buf, size_t count);

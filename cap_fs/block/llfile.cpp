@@ -3,9 +3,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-llfile::llfile():mFd(0),mFilePath(""),mNtype(data_file),mOpenFlags(0),mReOpenFlags(0),mState(ll_closed) {}
+llfile::llfile():mFd(0),mFilePath(""),mNtype(data_file),mOpenFlags(0),mReOpenFlags(0),mState(ll_invalidated) {}
 
-llfile::preOpen(std::string filename,node_type ntype,int flags) {
+llfile::llfile(std::string filename,node_type ntype,int flags):mFd(0),mFilePath(filename),mNtype(ntype),mOpenFlags(flags),mReOpenFlags(flags),mState(ll_closed) {
    struct stat nodestat;
    bool statok = (lstat(filename.c_str(),&nodestat) == 0);
    bool fileexists = true;
@@ -47,9 +47,27 @@ llfile::preOpen(std::string filename,node_type ntype,int flags) {
       throw std::system_error(errno,std::system_category());
    }
 }
-llfile::~llfile() {
-   close(mFd);
+
+llfile::llfile(llfile&& n):mFd(n.mFd),mFilePath(n.mFilePath),mNtype(n.mNtype),mState(n.mState) {
+  if (&n != this) {
+    n.mState=ll_invalidated;
+  }
 }
+
+llfile::~llfile() {
+   if (mState == ll_open) {
+      ::close(mFd);
+   }
+}
+
+void llfile::lowLevelOpen() {
+    
+}
+
+void llfile::lowLevelClose() {
+
+}
+
 ssize_t llfile::read(void *buf, size_t count){
         ssize_t rval = ::read(mFd,buf,count);
         if (rval == -1) {
