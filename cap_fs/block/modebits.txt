@@ -1,0 +1,59 @@
+To understand the mode bits fidling that happens here, this text file explains how we use 
+the mode bits to encode the file-type and file padding.
+
+CapFs currently knows 4 types of files: 
+
+1) Regular data files
+2) Executable files
+3) Symbolic links
+4) Directories.
+
+Each of these are stored in encrypted files on the underlying file-system. Given that CapFs 
+runs as its own user under its own group, its safe to use the suid bit and owner-execute bit 
+to encode these four node types.
+
+The setuid bit mask is 04000 while the owner execute bit mask is 00100. If we combine these,
+the mask 04100 can be used to filter a mask for node types:
+
+00000 -> regular file
+00100 -> executable file
+04000 -> symbolic link
+04100 -> directory.
+
+Files for each node type are written using block based AES encryption on 128 bit blocks.
+That is blocks of 16 bytes. Givven that the high level files may have any length, this means 
+that every encrypted file will be padded with zero upto 15 bytes. In order to encode this 
+padding information we shall need 4 bits. 
+
+We shall be encoding the padding size in using the set group id bit, the group read, the 
+group write and the group execute bit. This comes to the mask 02070 for padding encoding.
+
+00000 ->  0 bytes padding
+00010 ->  1 bytes padding
+00020 ->  2 bytes padding
+00030 ->  3 bytes padding
+00040 ->  4 bytes padding
+00050 ->  5 bytes padding
+00060 ->  6 bytes padding
+00070 ->  7 bytes padding
+02000 ->  8 bytes padding
+02010 ->  9 bytes padding
+02020 -> 10 bytes padding
+02030 -> 11 bytes padding
+02040 -> 12 bytes padding
+02050 -> 13 bytes padding
+02060 -> 14 bytes padding
+02070 -> 15 bytes padding
+
+So lets illustrate with an example. lets say we have a data file node that has 123 bytes 
+of content. The number 123 can be seen as 7*16+11. This means that the encrypted file will
+have to use 5 bytes of padding and will thus have be 8*16=128 bytes long.
+To encode the fact that its a regular data file with 5 bytes of padding, the mode 
+for the encrypted file will be set to: 00600 (the base mode for all files) & 00000 (regular 
+file) & 00050 (5 bytes of padding) = 00650.
+
+Second example, we have a directory. The data needed to encode the directory is 70 bytes. 
+This means 4*16+6. That means the encrypted file will have to be 5*16=80 bytes using 10
+bytes of padding, the  mode for the encrypted file will be set to: 00600 (the base mode 
+for all files) & 04100 (directory) & 02020 (10 bytes of padding) = 06720.
+

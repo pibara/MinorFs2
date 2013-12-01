@@ -20,6 +20,7 @@ class llfile {
     int mOpenFlags;
     int mReOpenFlags;
   public:
+    static int stat(std::string filename, struct stat *buf);
     llfile(llfile const &)=delete;
     llfile & operator=(llfile const &) = delete;
     llfile& operator=(llfile &&) = delete;
@@ -32,5 +33,6 @@ class llfile {
     ssize_t read(void *buf, size_t count);
     ssize_t write(const void *buf, size_t count);
     off_t lseek(off_t offset, int whence);
+    
 };
 #endif

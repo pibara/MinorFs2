@@ -3,6 +3,27 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+static int stat(std::string filename, struct stat *buf) {
+  bool statok = (lstat(filename.c_str(),&buf) == 0);
+  if (!statok) {
+     return -errno;
+  }
+  mode_t hlmode=0;
+  buf->st_size -= (buf->st_mode & 00070) >> 3; //Remove padding from size.
+  /*Convert file-type piggy-bag bits to proper mode masks for those types we support*/
+  switch (buf->st_mode & 04100) {
+        case 0: buf->st_mode = 0100666; 
+                break;
+        case 00100: buf->st_mode = 0100777;
+                break;
+        case 04000: buf->st_mode = 0120777;
+                break;
+        case 04100: buf->st_mode = 0040777;
+                break;
+  }
+  return 0;
+}
+
 llfile::llfile():mFd(0),mFilePath(""),mNtype(data_file),mOpenFlags(0),mReOpenFlags(0),mState(ll_invalidated) {}
 
 llfile::llfile(std::string filename,node_type ntype,int flags):mFd(0),mFilePath(filename),mNtype(ntype),mOpenFlags(flags),mReOpenFlags(flags),mState(ll_closed) {
