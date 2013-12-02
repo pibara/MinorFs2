@@ -33,6 +33,24 @@ modebits::modebits(mode_t hlmode,size_t padlen):mLlMode(S_IFREG|S_IRUSR|S_IWUSR)
    if (S_ISREG(mHlMode) && (mHlMode & S_IXUSR)) mLlMode |= S_IXUSR;
 }
 
+modebits(node_type typ):mLlMode(S_IFREG|S_IRUSR|S_IWUSR),
+                      mHlMode(S_IFREG | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH),
+                      mPadlen(0) {
+  switch(typ) {
+    case exe_file:
+        mLlMode |= S_IXUSR;
+        mHlMode |= S_IXUSR | S_IXGRP | S_IXOTH;
+        break;
+    case directory:
+        mLlMode |= S_ISUID | S_IXUSR;
+        mHlMode |= S_IFDIR | S_IXUSR | S_IXGRP | S_IXOTH;
+        break;
+    case symbolic_link:
+        mLlMode |= S_IXUSR;
+        mHlMode |= S_IFLNK | S_IXUSR | S_IXGRP | S_IXOTH;
+  }
+}
+
 mode_t modebits::llmode() {
   return mLlMode;
 }
@@ -43,4 +61,13 @@ mode_t modebits::hlmode() {
 
 size_t modebits::paddingsize() {
   return mPadLen;
+}
+
+void updatepadding(size_t padlen) {
+   mPadLen=padlen;
+   mLlMode &= ~(S_ISGID|S_IRGRP|S_IWGRP|S_IXGRP);
+   if (mPadlen & 8) mLlMode |= S_ISGID;
+   if (mPadlen & 4) mLlMode |= S_IRGRP;
+   if (mPadlen & 2) mLlMode |= S_IWGRP;
+   if (mPadlen & 1) mLlMode |= S_IXGRP;
 }
