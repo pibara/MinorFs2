@@ -52,16 +52,19 @@ class openfilecollection {
        }
        return mLastHandle;
     }
+    
     //This method will remove events from the front of the event queue when possible or needed.
     void cleanupQueFront() {
         //If the front most node is in the queue more often than once, we can savely remove it and adjust
         //the count in mFullyOpen. If the size of the queue is larger than the maximum size, we shall remove it
         //even if its not needed from a number of open file handles perspective.
-        while ((mFullyOpen[mOpperQue.front()] > 1) || (mOpperQue.size() > maxQueueSize)) {
-            mFullyOpen[mOpperQue.front()] -= 1; //Reduce the count.
-            if (mFullyOpen[mOpperQue.front()] == 0) { //If this means the count drops to zero, low-level close the node for now.
-                mCollection[mOpperQue.front()].lowLevelClose();
-                mFullyOpen.erase(mOpperQue.front());
+        while ((mFullyOpen.count(mOpperQue.front())  && (mFullyOpen[mOpperQue.front()] > 1)) || (mOpperQue.size() > maxQueueSize)) {
+            if (mFullyOpen.count(mOpperQue.front())) {
+              mFullyOpen[mOpperQue.front()] -= 1; //Reduce the count.
+              if (mFullyOpen[mOpperQue.front()] == 0) { //If this means the count drops to zero, low-level close the node for now.
+                  mCollection[mOpperQue.front()].lowLevelClose();
+                  mFullyOpen.erase(mOpperQue.front());
+              }
             }
             mOpperQue.pop_front(); //Drop the event from the event queue.
             
@@ -96,13 +99,13 @@ class openfilecollection {
     }
     //Operator for accessing the file node object. This operator will return a low-level opened file object.
     nodeType & operator[](uint64_t fh) {
-        if (mCollection.count(fh) == 0) {
+        if (mCollection.count(fh) == 0) { //If fh is not in map, return the default constructed null object.
             return mNull;
         }
         if (mFullyOpen.count(fh)) { //If the file node is already low-level open:
           if (fh != mOpperQue.back()) { // If adding the operation to the queue won't result in a duplicate:
             mFullyOpen[fh] += 1;   //Update the occurence count
-            mOpperQue.push_back(fh);//And add an other occurence of theis file handle to the back of the queu. 
+            mOpperQue.push_back(fh);//And add an other occurence of this file handle to the back of the queu. 
           }
         } else { //If the file curently wasn't low-level opened:
           mFullyOpen[fh] = 1; //Set the occurence count to one.
@@ -113,10 +116,10 @@ class openfilecollection {
         return mCollection[fh]; //Return our open file node by reference.
     }
     //This method adds a new node to the container and does both a high level and low level open.
-    uint64_t open(nodeType node) {
+    template<typename ... Args>
+    uint64_t open(Args&& ... args) {
         uint64_t fh=this->getFreeFhNumber(); //Get a new fh number.
-        mCollection.insert(std::pair<uint64_t, nodeType>(fh,std::move(node))); //Add the node to our container under the new fh.
-        //mCollection[fh] = node; //Add the node to our container under the new fh.
+        mCollection.emplace(std::piecewise_construct,std::forward_as_tuple(fh),std::forward_as_tuple(args...));
         mFullyOpen[fh] = 1; //Set the queue occurence count to one.
         mOpperQue.push_back(fh); //and add the file handle to the event queue.
         this->tempCloseIfNeeded(); //Before opening the new file, make sure we don't exeed the maximum number of open files.
@@ -132,6 +135,10 @@ class openfilecollection {
         }
         //Drop from our high-level collection.
         mCollection.erase(fh);
+        //Note: there may still be entries in mOpperQue refering to the deleted entity, won't clean up here thus other
+        //operations need resilience regarding dead file-handles.
+        //All we do for now is cleanup the queue front, just in case it starts with the just erased handle.
+        this->cleanupQueFront();
     }
 };
 
