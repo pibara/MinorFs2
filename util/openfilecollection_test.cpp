@@ -71,11 +71,11 @@ int main(int argc,char **argv) {
    for (int index=0; index < 10; ++index) {
       fhs[index]=coll.open(index + 1);
    }
-   Node & n1=coll[fhs[0]];
-   Node & n2=coll[fhs[2]];
-   Node & n3=coll[fhs[4]];
-   Node & n4=coll[fhs[6]];
-   Node & n5=coll[fhs[8]];
+   auto n1=coll[fhs[0]];
+   auto n2=coll[fhs[2]];
+   auto n3=coll[fhs[4]];
+   auto n4=coll[fhs[6]];
+   auto n5=coll[fhs[8]];
    coll.close(fhs[0]);
    coll.close(fhs[9]);
    coll.close(fhs[2]);

@@ -97,10 +97,28 @@ class openfilecollection {
            mCollection[fh].lowLevelClose();
        }
     }
-    //Operator for accessing the file node object. This operator will return a low-level opened file object.
-    nodeType & operator[](uint64_t fh) {
+    class node_handle {
+        openfilecollection<nodeType, maxOpenFiles, maxQueueSize> &mCol;
+        uint64_t mFh;
+       public:
+        node_handle(openfilecollection<nodeType, maxOpenFiles, maxQueueSize> &col, uint64_t fh):mCol(col),mFh(fh){}
+        void close() {
+           mCol.close(mFh);
+        }
+        ssize_t read(void *buf, size_t count) {
+           return mCol[mFh].read(buf,count);
+        }
+        ssize_t write(const void *buf, size_t count) {
+           return mCol[mFh].write(buf,count);
+        }
+        off_t lseek(off_t offset, int whence) {
+           return mCol[mFh].lseek(offset,whence);
+        }         
+    };
+    //Operator for accessing the file node object. This operator will return a low-level opened file object by handle.
+    node_handle operator[](uint64_t fh) {
         if (mCollection.count(fh) == 0) { //If fh is not in map, return the default constructed null object.
-            return mNull;
+            return node_handle(*this,0);
         }
         if (mFullyOpen.count(fh)) { //If the file node is already low-level open:
           if (fh != mOpperQue.back()) { // If adding the operation to the queue won't result in a duplicate:
@@ -113,7 +131,7 @@ class openfilecollection {
           this->tempCloseIfNeeded(); //and make sure we don't exeed the max number of open files.
           mCollection[fh].lowLevelOpen(); //Now do a low level open of the file node.
         }
-        return mCollection[fh]; //Return our open file node by reference.
+        return node_handle(*this,fh); //Return our open file node as handle;
     }
     //This method adds a new node to the container and does both a high level and low level open.
     template<typename ... Args>
@@ -134,7 +152,9 @@ class openfilecollection {
             mCollection[fh].lowLevelClose();
         }
         //Drop from our high-level collection.
-        mCollection.erase(fh);
+        if (mCollection.count(fh)) {
+          mCollection.erase(fh);
+        }
         //Note: there may still be entries in mOpperQue refering to the deleted entity, won't clean up here thus other
         //operations need resilience regarding dead file-handles.
         //All we do for now is cleanup the queue front, just in case it starts with the just erased handle.
