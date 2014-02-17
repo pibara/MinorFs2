@@ -58,8 +58,8 @@ class openfilecollection {
         //If the front most node is in the queue more often than once, we can savely remove it and adjust
         //the count in mFullyOpen. If the size of the queue is larger than the maximum size, we shall remove it
         //even if its not needed from a number of open file handles perspective.
-        while ((mFullyOpen.count(mOpperQue.front())  && (mFullyOpen[mOpperQue.front()] > 1)) || (mOpperQue.size() > maxQueueSize)) {
-            if (mFullyOpen.count(mOpperQue.front())) {
+        while ((mFullyOpen.count(mOpperQue.front()) == 0)||(mFullyOpen[mOpperQue.front()]>1)||(mOpperQue.size()>maxQueueSize)) {
+            if (mFullyOpen.count(mOpperQue.front()) != 0) {
               mFullyOpen[mOpperQue.front()] -= 1; //Reduce the count.
               if (mFullyOpen[mOpperQue.front()] == 0) { //If this means the count drops to zero, low-level close the node for now.
                   mCollection[mOpperQue.front()].lowLevelClose();
