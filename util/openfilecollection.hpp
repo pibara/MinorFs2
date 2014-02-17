@@ -98,24 +98,21 @@ class openfilecollection {
        }
     }
     class node_handle {
-        openfilecollection<nodeType, maxOpenFiles, maxQueueSize> &mCol;
+        openfilecollection<nodeType, maxOpenFiles, maxQueueSize> *mCol;
         uint64_t mFh;
        public:
-        node_handle(openfilecollection<nodeType, maxOpenFiles, maxQueueSize> &col, uint64_t fh):mCol(col),mFh(fh){}
+        node_handle(openfilecollection<nodeType, maxOpenFiles, maxQueueSize> *col, uint64_t fh):mCol(col),mFh(fh){}
         void close() {
-           mCol.close(mFh);
+           mCol->close(mFh);
         }
-        ssize_t read(void *buf, size_t count) {
-           return mCol[mFh].read(buf,count);
+        ssize_t read(void *buf, size_t count,off_t offset) {
+           return mCol->mCollection[mFh].read(buf,count);
         }
-        ssize_t write(const void *buf, size_t count) {
-           return mCol[mFh].write(buf,count);
+        ssize_t write(const void *buf, size_t count,off_t offset) {
+           return mCol->mCollection[mFh].write(buf,count);
         }
-        off_t lseek(off_t offset, int whence) {
-           return mCol[mFh].lseek(offset,whence);
-        } 
         int chmod(mode_t mode) {
-           return mCol[mFh].chmod(mode);
+           return mCol->mCollection[mFh].chmod(mode);
         }
     };
     //Operator for accessing the file node object. This operator will return a low-level opened file object by handle.
@@ -134,7 +131,7 @@ class openfilecollection {
           this->tempCloseIfNeeded(); //and make sure we don't exeed the max number of open files.
           mCollection[fh].lowLevelOpen(); //Now do a low level open of the file node.
         }
-        return node_handle(*this,fh); //Return our open file node as handle;
+        return node_handle(this,fh); //Return our open file node as handle;
     }
     //This method adds a new node to the container and does both a high level and low level open.
     template<typename ... Args>
