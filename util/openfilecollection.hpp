@@ -113,7 +113,10 @@ class openfilecollection {
         }
         off_t lseek(off_t offset, int whence) {
            return mCol[mFh].lseek(offset,whence);
-        }         
+        } 
+        int chmod(mode_t mode) {
+           return mCol[mFh].chmod(mode);
+        }
     };
     //Operator for accessing the file node object. This operator will return a low-level opened file object by handle.
     node_handle operator[](uint64_t fh) {
