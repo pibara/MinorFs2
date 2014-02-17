@@ -86,8 +86,8 @@ class openfilecollection {
         }
         this->cleanupQueFront(); //There may be some entries now at the end of the queue that can be cleaned up.
     }
-    openfilecollection(openfilecollection const &); //Copy constructor declared private -> no copy.
-    openfilecollection &operator=(openfilecollection const &); //assignment declared provate -> no copy.
+    openfilecollection(openfilecollection const &) = delete;
+    openfilecollection &operator=(openfilecollection const &) = delete;
   public:
     openfilecollection():mNull(),mLastHandle(0){} //Constructor initializes the mLastHandle value.
     ~openfilecollection() { 

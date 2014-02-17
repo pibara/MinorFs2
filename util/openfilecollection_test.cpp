@@ -12,7 +12,7 @@ class Node {
     Node():mNum(0),mValid(false),mOpen(false){}
     /*Constructor for the null node*/
     Node(int num):mNum(num),mValid(true),mOpen(false){
-        std::cout << "constructor " << num << std::endl;
+        std::cerr << "constructor " << num << std::endl;
     }
     /*Move constructor*/
     Node(Node&& n):mNum(n.mNum),mValid(n.mValid),mOpen(n.mOpen){
@@ -20,10 +20,10 @@ class Node {
           if (mValid) {
             n.mValid=false;
           } else {
-            std::cout << "BOGUS use of move constructor " << mNum << std::endl;
+            std::cerr << "BOGUS use of move constructor " << mNum << std::endl;
           }
         } else {
-           std::cout << "BOGUS self assignment in move constructor " << mNum << std::endl;
+           std::cerr << "BOGUS self assignment in move constructor " << mNum << std::endl;
         }
     }
     /*Destructor*/
@@ -31,10 +31,10 @@ class Node {
       if (mNum) {
         if (mValid) {
           if (mOpen) {
-             std::cout << "Destructor of open node " << mNum << std::endl;
+             std::cerr << "Destructor of open node " << mNum << std::endl;
              this->lowLevelClose();
           } else {
-              std::cout << "Destructor of closed node " << mNum << std::endl;
+              std::cerr << "Destructor of closed node " << mNum << std::endl;
           }
         }
       }
@@ -42,39 +42,44 @@ class Node {
     void lowLevelClose() { 
        if (mValid) {
          if (mOpen) {
-           std::cout << "lowLevelClose of open node " <<  mNum << std::endl;
+           std::cerr << "lowLevelClose of open node " <<  mNum << std::endl;
            mOpen=false;
          } else {
-           std::cout << "lowLevelClose of closed node " <<  mNum << std::endl;
+           std::cerr << "lowLevelClose of closed node " <<  mNum << std::endl;
          }
        } else {
-          std::cout << "BOGUS lowLevelClose of invalidated node" <<  mNum << std::endl;
+          std::cerr << "BOGUS lowLevelClose of invalidated node" <<  mNum << std::endl;
        }
     }
     void lowLevelOpen() {
        if (mValid) {
          if (mOpen) {
-           std::cout << "BOGUS lowLevelOpen of open node " <<  mNum << std::endl;
+           std::cerr << "BOGUS lowLevelOpen of open node " <<  mNum << std::endl;
          } else {
-           std::cout << "lowLevelOpen " <<  mNum << std::endl;
+           std::cerr << "lowLevelOpen " <<  mNum << std::endl;
            mOpen=true;
          }
        } else {
-          std::cout << "BOGUS lowLevelOpen of invalidated node" <<  mNum << std::endl;
+          std::cerr << "BOGUS lowLevelOpen of invalidated node" <<  mNum << std::endl;
        }
     }
 };
 
 int main(int argc,char **argv) {
    openfilecollection<Node,4,1000> coll;
-   std::vector<uint64_t> fhs(6);
-   for (int index=0; index < 6; ++index) {
-      fhs[index]=coll.open(Node(index + 1));
+   std::vector<uint64_t> fhs(10);
+   for (int index=0; index < 10; ++index) {
+      fhs[index]=coll.open(index + 1);
    }
-   Node & n7=coll[fhs[0]];
-   Node & n8=coll[fhs[4]];
+   Node & n1=coll[fhs[0]];
+   Node & n2=coll[fhs[2]];
+   Node & n3=coll[fhs[4]];
+   Node & n4=coll[fhs[6]];
+   Node & n5=coll[fhs[8]];
    coll.close(fhs[0]);
+   coll.close(fhs[9]);
    coll.close(fhs[2]);
-   coll.close(fhs[4]);
+   coll.close(fhs[8]);
+   coll.close(fhs[3]);
    return 0;
 }
