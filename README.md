@@ -14,6 +14,10 @@ Libraries:
 * AESsparse++       : Library for sparse friendly AES encrypted files.
 * LibMinorFS2       : Library for facilitating MinorFS2 aware applications to use attentuation, decomposition and delegation.
 
+Misc:
+
+* Rumpelbuntu       : Ubuntu server install CD tuned for use of MinorFS2 and more extensive use of AppArmor.
+
 Please check the github pages if you want to keep up with MinorFS2 development.
 I will be slowly moving all code in this repository to the individual github projects.
 
