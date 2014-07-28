@@ -10,10 +10,10 @@ Filesystems:
 * [SpinningwheelFS](https://github.com/pibara/SpinningwheelFS)   : formaly known as MinorFs2::homefs, retrofitting file-system for allowing non-minorfs aware apps to use private storage.
 
 Libraries:
-* [Rumpeltree++](https://github.com/pibara/Rumpeltreepp) [*complete*]: C++ Library for keeping large sets of files virtualy opened.
+* [Rumpeltree++](https://github.com/pibara/Rumpeltreepp) [**complete**]: C++ Library for keeping large sets of files virtualy opened.
 * [AESsparse++](https://github.com/pibara/AESsparsepp)       : C++ Library for sparse friendly AES encrypted files.
 * [LibMinorFS2](https://github.com/pibara/LibMinorFs2)       : C/C++ Library for facilitating MinorFS2 aware applications to use attentuation, decomposition and delegation.
-* [Sesame++](https://github.com/pibara/sesamepp)          : Header only C++ library for Base32 encoding/decoding of fixed length binanry data.
+* [Sesame++](https://github.com/pibara/sesamepp) [**active**]          : Header only C++ library for Base32 encoding/decoding of fixed length binanry data.
 
 Misc:
 
