@@ -10,8 +10,7 @@ Filesystems:
 * SpinningwheelFS   : formaly known as MinorFs2::homefs, retrofitting file-system for allowing non-minorfs aware apps to use private storage.
 
 Libraries:
-* Rumpeltree++      : C++ Library for walking Rumplestiltskin tree-graphs.
-* Sesame++          : C++ Library for keeping large sets of files virtualy opened.
+* [Rumpeltree++](https://github.com/pibara/Rumpeltreepp) : C++ Library for keeping large sets of files virtualy opened.
 * AESsparse++       : C++ Library for sparse friendly AES encrypted files.
 * LibMinorFS2       : C/C++ Library for facilitating MinorFS2 aware applications to use attentuation, decomposition and delegation.
 * Base32++          : Header only C++ library for Base32 encoding/decoding of fixed length binanry data.
