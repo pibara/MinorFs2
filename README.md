@@ -17,7 +17,6 @@ Libraries:
 
 Misc:
 
-* [Rumpelbuntu](https://github.com/pibara/Rumpelbuntu)       : Ubuntu server install CD tuned for use of MinorFS2 and more extensive use of AppArmor.
 * Pseudodomde       : Daemon for looking up different attributes relevant to pseudo persistent process designations.
 * Rumpeltools       : A set of leveraged authority user-level tools for MinorFs2. 
 
